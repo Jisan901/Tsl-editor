@@ -14,7 +14,7 @@ import {
   OnEdgesChange,
   useReactFlow
 } from '@xyflow/react';
-import { Trash2, RotateCcw } from 'lucide-react';
+import { Trash2, XCircle, RefreshCw } from 'lucide-react';
 
 import { NodeType, CustomNode } from './types';
 import { BaseNode } from './components/BaseNode';
@@ -79,12 +79,12 @@ const Flow: React.FC = () => {
     );
   }, []);
 
-  const resetToInitial = useCallback(() => {
+  const getInitialElements = useCallback(() => {
     const outputId = 'output-1';
     const uvId = 'uv-1';
     const checkerId = 'checker-1';
 
-    const initial: CustomNode[] = [
+    const initialNodes: CustomNode[] = [
       {
         id: outputId,
         type: 'materialNode',
@@ -119,15 +119,35 @@ const Flow: React.FC = () => {
         },
       }
     ];
-    setNodes(initial);
-    setEdges([
+
+    const initialEdges: Edge[] = [
       { id: 'e1', source: uvId, target: checkerId, targetHandle: 'uv' },
       { id: 'e2', source: checkerId, target: outputId, targetHandle: 'color' }
-    ]);
-    setTimeout(() => fitView({ padding: 0.4 }), 50);
-  }, [updateNodeData, fitView]);
+    ];
 
-  useEffect(() => { resetToInitial(); }, []);
+    return { nodes: initialNodes, edges: initialEdges };
+  }, [updateNodeData]);
+
+  // Load template on mount
+  useEffect(() => {
+    const { nodes: n, edges: e } = getInitialElements();
+    setNodes(n);
+    setEdges(e);
+  }, [getInitialElements]);
+
+  const clearCanvas = useCallback(() => {
+    if (confirm("Are you sure you want to clear the entire canvas?")) {
+      setNodes([]);
+      setEdges([]);
+    }
+  }, []);
+
+  const resetToInitial = useCallback(() => {
+    const { nodes: n, edges: e } = getInitialElements();
+    setNodes(n);
+    setEdges(e);
+    setTimeout(() => fitView({ padding: 0.4 }), 50);
+  }, [getInitialElements, fitView]);
 
   const onNodesChange: OnNodesChange<CustomNode> = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges<CustomNode>(changes, nds)),
@@ -210,6 +230,14 @@ const Flow: React.FC = () => {
     setNodes((nds) => nds.concat(newNode));
   }, [updateNodeData]);
 
+  const handleDeleteSelected = useCallback(() => {
+    const selectedNodes = nodes.filter(n => n.selected);
+    const selectedEdges = edges.filter(e => e.selected);
+    if (selectedNodes.length > 0 || selectedEdges.length > 0) {
+      deleteElements({ nodes: selectedNodes, edges: selectedEdges });
+    }
+  }, [nodes, edges, deleteElements]);
+
   return (
     <div className="flex flex-1 overflow-hidden h-full w-full bg-zinc-950">
       <Sidebar onAddNode={onAddNode} isOpen={isSidebarOpen} toggle={() => setSidebarOpen(!isSidebarOpen)} />
@@ -231,19 +259,34 @@ const Flow: React.FC = () => {
           >
             <Background color="#18181b" gap={20} size={1} />
             <Controls />
-            <Panel position="top-right" className="flex gap-1">
-              <button 
-                onClick={() => deleteElements({ nodes: nodes.filter(n => n.selected), edges: edges.filter(e => e.selected) })} 
-                className="p-1.5 bg-zinc-900/80 border border-zinc-800 rounded text-zinc-500 hover:text-red-400 backdrop-blur-sm"
-              >
-                <Trash2 size={12} />
-              </button>
-              <button 
-                onClick={resetToInitial} 
-                className="p-1.5 bg-zinc-900/80 border border-zinc-800 rounded text-zinc-500 hover:text-white backdrop-blur-sm"
-              >
-                <RotateCcw size={12} />
-              </button>
+            <Panel position="top-right" className="flex items-center gap-2 p-2 bg-zinc-900/90 border border-zinc-800 rounded-lg backdrop-blur-md shadow-2xl">
+              <div className="flex items-center gap-1 border-r border-zinc-800 pr-2">
+                <button 
+                  onClick={handleDeleteSelected} 
+                  className="p-2 bg-zinc-800 hover:bg-red-950/40 hover:text-red-400 rounded transition-all text-zinc-400 group"
+                  title="Delete Selected"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={clearCanvas} 
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded transition-all font-bold text-[9px] uppercase tracking-wider"
+                  title="Clear All"
+                >
+                  <XCircle size={14} />
+                  <span>Clear</span>
+                </button>
+                <button 
+                  onClick={resetToInitial} 
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded transition-all font-bold text-[9px] uppercase tracking-wider shadow-lg shadow-blue-900/20"
+                  title="Reset to Template"
+                >
+                  <RefreshCw size={14} />
+                  <span>Reset</span>
+                </button>
+              </div>
             </Panel>
           </ReactFlow>
         </div>
