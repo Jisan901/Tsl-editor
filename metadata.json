@@ -1,0 +1,5 @@
+{
+  "name": "Three.js Node Material Explorer",
+  "description": "A high-performance node-based material editor for Three.js using xyflow (React Flow) and Tailwind CSS. Create complex shaders visually and preview them in real-time.",
+  "requestFramePermissions": []
+}

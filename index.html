@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSL Lab | Node Material Editor</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://esm.sh/@xyflow/react@12.10.0/dist/style.css">
+    
+    <style>
+        body { margin: 0; overflow: hidden; background: #09090b; color: #fafafa; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 11px; }
+        #fatal-error-display { display: none; position: fixed; top: 10px; left: 10px; right: 10px; background: #ef4444; color: #fff; padding: 10px; border-radius: 4px; z-index: 99999; font-family: monospace; font-size: 10px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        
+        .react-flow__node { border-radius: 4px; border: 1px solid #27272a; background: #18181b; }
+        .react-flow__handle { width: 6px; height: 6px; background: #3b82f6; border: 2px solid #09090b; }
+        .react-flow__controls { background: #18181b !important; border: 1px solid #27272a !important; border-radius: 4px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important; }
+        .react-flow__controls-button { border-bottom: 1px solid #27272a !important; fill: #71717a !important; }
+        .react-flow__attribution { display: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+    </style>
+
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+    "three": "https://esm.sh/three@0.170.0",
+    "three/nodes": "https://esm.sh/three@0.170.0/examples/jsm/nodes/Nodes.js",
+    "three/webgpu": "https://esm.sh/three@0.170.0/examples/jsm/renderers/webgpu/WebGPURenderer.js",
+    "three/examples/jsm/controls/OrbitControls": "https://esm.sh/three@0.170.0/examples/jsm/controls/OrbitControls.js",
+    "lucide-react": "https://esm.sh/lucide-react@0.460.0?external=react",
+    "@xyflow/react": "https://esm.sh/@xyflow/react@12.10.0?bundle&external=react,react-dom",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "three/": "https://esm.sh/three@^0.182.0/"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="fatal-error-display"></div>
+    <div id="root"></div>
+    
+    <script type="module" src="./index.tsx"></script>
+
+    <script>
+        window.addEventListener('error', (e) => {
+            const display = document.getElementById('fatal-error-display');
+            if (display) {
+                display.style.display = 'block';
+                display.textContent = 'Runtime Error: ' + (e.error?.message || e.message);
+            }
+        });
+    </script>
+</body>
+</html>
