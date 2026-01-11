@@ -1,4 +1,5 @@
 
+
 import { CustomNode, NodeType } from '../types';
 import { Edge } from '@xyflow/react';
 import * as THREE from 'three';
@@ -84,9 +85,13 @@ export class NodeEngine {
       return val;
     };
 
-    // Helper: Cast to float
+    // Helper: Cast to float (handle strings safely)
     const f = (v: any): number => {
-      if (typeof v === 'number') return v;
+      if (typeof v === 'number') return isNaN(v) ? 0 : v;
+      if (typeof v === 'string') {
+          const parsed = parseFloat(v);
+          return isNaN(parsed) ? 0 : parsed;
+      }
       if (v instanceof THREE.Color) return (v.r + v.g + v.b) / 3;
       if (v instanceof THREE.Vector3) return v.x;
       return 0;
@@ -95,21 +100,21 @@ export class NodeEngine {
     // Helper: Cast to Color/Vec3
     const c = (v: any): THREE.Color => {
       if (v instanceof THREE.Color) return v.clone();
-      if (typeof v === 'number') return new THREE.Color(v, v, v);
       if (v instanceof THREE.Vector3) return new THREE.Color(v.x, v.y, v.z);
-      return new THREE.Color(0,0,0);
+      const val = f(v);
+      return new THREE.Color(val, val, val);
     }
 
     // Helper: Cast to Vector3
     const v3 = (v: any): THREE.Vector3 => {
       if (v instanceof THREE.Vector3) return v.clone();
       if (v instanceof THREE.Color) return new THREE.Vector3(v.r, v.g, v.b);
-      if (typeof v === 'number') return new THREE.Vector3(v, v, v);
-      return new THREE.Vector3();
+      const val = f(v);
+      return new THREE.Vector3(val, val, val);
     }
 
     switch (type) {
-      case NodeType.FLOAT: return Number(node.data.value ?? 0);
+      case NodeType.FLOAT: return f(node.data.value);
       case NodeType.COLOR: return new THREE.Color(node.data.value ?? '#ffffff');
       case NodeType.VEC2: return new THREE.Vector2(f(input('x')), f(input('y')));
       case NodeType.VEC3: return new THREE.Vector3(f(input('x')), f(input('y')), f(input('z')));
@@ -120,7 +125,8 @@ export class NodeEngine {
         return new THREE.Vector2(context.uv.x * scale, context.uv.y * scale);
       }
 
-      case NodeType.SCREEN_UV: {
+      case NodeType.SCREEN_UV: 
+      case NodeType.VIEWPORT_UV: {
         // In the context of a preview quad, Screen UV ~ UV
         return new THREE.Vector2(context.uv.x, context.uv.y);
       }
@@ -142,6 +148,7 @@ export class NodeEngine {
 
       case NodeType.TEXTURE:
       case NodeType.TRIPLANAR:
+      case NodeType.PASS:
           // Return a placeholder grid pattern for CPU preview since we can't easily sample DOM image synchronously without canvas overhead
           return (Math.floor(context.uv.x * 5) + Math.floor(context.uv.y * 5)) % 2 === 0 ? 0.2 : 0.8;
       
@@ -150,15 +157,32 @@ export class NodeEngine {
           return context.uv.x;
 
       case NodeType.VIEWPORT_DEPTH:
+      case NodeType.VIEWPORT_LINEAR_DEPTH:
+      case NodeType.DEPTH:
+      case NodeType.DEPTH_PASS:
           return 0.5; // Constant depth for preview
           
       case NodeType.LINEAR_DEPTH:
           return f(input('depth')); // Pass through for preview
+      
+      case NodeType.LOGARITHMIC_DEPTH_TO_VIEW_Z:
+      case NodeType.PERSPECTIVE_DEPTH_TO_VIEW_Z: 
+          return f(input('depth')) * 10; 
+
+      case NodeType.VIEW_Z_TO_ORTHOGRAPHIC_DEPTH: 
+          return f(input('viewZ')) / 10;
 
       case NodeType.CAMERA_NEAR: return 0.1;
       case NodeType.CAMERA_FAR: return 100.0;
-      case NodeType.PERSPECTIVE_DEPTH_TO_VIEW_Z: return f(input('depth')) * 10; // Dummy
-      case NodeType.VIEW_Z_TO_ORTHOGRAPHIC_DEPTH: return f(input('viewZ')) / 10; // Dummy
+      
+      case NodeType.NORMAL:
+      case NodeType.NORMAL_VIEW:
+          return new THREE.Vector3(0, 0, 1);
+          
+      case NodeType.POSITION:
+      case NodeType.POSITION_VIEW:
+      case NodeType.MODEL_VIEW_POSITION:
+          return new THREE.Vector3(context.uv.x, context.uv.y, 0);
 
       case NodeType.SPLIT: return input('in'); 
       case NodeType.PREVIEW: return input('in');

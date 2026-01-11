@@ -81,7 +81,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onSave, onLoad, onExport, onLo
       </div>
 
       <div className="flex items-center gap-2 text-[9px] text-zinc-600">
-         <a href="https://github.com/mrdoob/three.js" target="_blank" className="hover:text-zinc-400 transition-colors">Three.js r171</a>
+         <a href="https://github.com/mrdoob/three.js" target="_blank" className="hover:text-zinc-400 transition-colors">Three.js r182</a>
       </div>
     </div>
   );

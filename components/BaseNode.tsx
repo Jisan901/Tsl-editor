@@ -8,7 +8,7 @@ const getHandleColor = (handleId: string) => {
   if (['color', 'emissive', 'alpha'].includes(id)) return '#3b82f6';
   if (['uv', 'normal', 'position', 'out'].includes(id)) return '#fbbf24';
   if (['x', 'y', 'z', 'w', 'r', 'g', 'b', 'a'].includes(id)) return '#ef4444';
-  if (['ao', 'roughness', 'metalness', 'in', 'opacity', 'alphatest'].includes(id)) return '#d4d4d8'; 
+  if (['ao', 'roughness', 'metalness', 'in', 'opacity'].includes(id)) return '#d4d4d8'; 
   return '#71717a';
 };
 
@@ -54,7 +54,7 @@ export const BaseNode: React.FC<BaseNodeProps> = memo(({ id, data, selected }) =
                       type="number" 
                       step="0.05" 
                       value={data.values?.[input] ?? 0} 
-                      onChange={(e) => data.onChange?.(input, parseFloat(e.target.value))} 
+                      onChange={(e) => data.onChange?.(input, e.target.value)} 
                       className="w-full h-4 bg-zinc-900/50 text-zinc-400 px-1 rounded-sm border border-zinc-800 text-[8px] focus:outline-none focus:border-zinc-600" 
                     />
                   )}
@@ -115,7 +115,7 @@ export const BaseNode: React.FC<BaseNodeProps> = memo(({ id, data, selected }) =
                    type="number" 
                    step="0.1" 
                    value={data.value ?? 1.0} 
-                   onChange={(e) => data.onChange?.('value', parseFloat(e.target.value))} 
+                   onChange={(e) => data.onChange?.('value', e.target.value)} 
                    className="w-full h-4 bg-zinc-900/50 text-zinc-200 px-1.5 rounded-sm border border-zinc-800 text-[9px] focus:outline-none focus:border-blue-500/50" 
                  />
                  <div className="absolute right-1 top-0 bottom-0 flex items-center text-[7px] text-zinc-600 pointer-events-none font-mono">VAL</div>

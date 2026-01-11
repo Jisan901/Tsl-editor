@@ -1,4 +1,5 @@
 
+
 import { Node, Edge } from '@xyflow/react';
 
 export enum NodeType {
@@ -12,8 +13,12 @@ export enum NodeType {
   // Attributes
   UV = 'uv',
   SCREEN_UV = 'screenUV',
+  VIEWPORT_UV = 'viewportUV', // New
   NORMAL = 'normal',
+  NORMAL_VIEW = 'normalView', // New
   POSITION = 'position',
+  POSITION_VIEW = 'positionView', // New
+  MODEL_VIEW_POSITION = 'modelViewPosition', // New
   TIME = 'time',
   
   // Math Basic
@@ -55,10 +60,11 @@ export enum NodeType {
   SMOOTHSTEP = 'smoothstep',
   
   // Patterns
-  SIMPLEX_NOISE_2D = 'simplexNoise2d', // Custom 2D noise
+  SIMPLEX_NOISE_2D = 'simplexNoise2d', 
   CHECKER = 'checker',
   VIEWPORT_DEPTH_TEXTURE = 'viewportDepthTexture',
   VIEWPORT_DEPTH = 'viewportDepth',
+  VIEWPORT_LINEAR_DEPTH = 'viewportLinearDepth', // New
 
   // Depth
   LINEAR_DEPTH = 'linearDepth',
@@ -66,17 +72,22 @@ export enum NodeType {
   CAMERA_FAR = 'cameraFar',
   PERSPECTIVE_DEPTH_TO_VIEW_Z = 'perspectiveDepthToViewZ',
   VIEW_Z_TO_ORTHOGRAPHIC_DEPTH = 'viewZToOrthographicDepth',
+  LOGARITHMIC_DEPTH_TO_VIEW_Z = 'logarithmicDepthToViewZ', // New
+  DEPTH = 'depth', // New
 
-  // Textures
+  // Textures & Passes
   TEXTURE = 'texture',
   TRIPLANAR = 'triplanar',
+  PASS = 'pass', // New
+  DEPTH_PASS = 'depthPass', // New
 
   // Utility
   SPLIT = 'split',
   PREVIEW = 'preview',
   
   // Output
-  MATERIAL = 'material'
+  MATERIAL = 'material',
+  BASIC_MATERIAL = 'basicMaterial'
 }
 
 export interface NodeData {
