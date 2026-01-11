@@ -1,21 +1,8 @@
-
-import React from 'react';
-import { 
-  Plus, Settings2, Grid, MousePointer2, Zap, Circle, Activity, 
-  Waves, Hash, Divide, Minus, X, Combine, Maximize2, Minimize2,
-  Square, Triangle, Type, Move, Target
-} from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Grid, Settings2, Box } from 'lucide-react';
+import { NODE_REGISTRY, NodeDefinition } from '../services/NodeRegistry';
 
 interface SidebarProps { onAddNode: (type: string) => void; isOpen: boolean; toggle: () => void; }
-
-const NodeCategory: React.FC<{ title: string; children: React.ReactNode; icon: any }> = ({ title, children, icon: Icon }) => (
-  <div className="mb-6">
-    <div className="flex items-center gap-1.5 px-1 mb-2 text-zinc-600 font-bold text-[8px] uppercase tracking-wider">
-      <Icon size={10} /> {title}
-    </div>
-    <div className="grid grid-cols-1 gap-0.5">{children}</div>
-  </div>
-);
 
 const NodeItem: React.FC<{ label: string; onClick: () => void; icon: any }> = ({ label, onClick, icon: Icon }) => (
   <button 
@@ -28,6 +15,23 @@ const NodeItem: React.FC<{ label: string; onClick: () => void; icon: any }> = ({
 );
 
 export const Sidebar: React.FC<SidebarProps> = ({ onAddNode, isOpen, toggle }) => {
+  
+  // Group nodes by category
+  const categories = useMemo(() => {
+    const groups: Record<string, NodeDefinition[]> = {};
+    const order = ['Constants', 'Attributes', 'Math', 'Logic', 'Patterns & Textures', 'Tools', 'Output'];
+    
+    // Initialize groups in order
+    order.forEach(k => groups[k] = []);
+    
+    NODE_REGISTRY.forEach(node => {
+      if (!groups[node.category]) groups[node.category] = [];
+      groups[node.category].push(node);
+    });
+
+    return Object.entries(groups).filter(([_, items]) => items.length > 0);
+  }, []);
+
   return (
     <div className={`${isOpen ? 'w-44' : 'w-10'} transition-all bg-zinc-950 border-r border-zinc-900 flex flex-col shrink-0 z-10`}>
       <div className="p-3 border-b border-zinc-900 flex items-center justify-between">
@@ -36,39 +40,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ onAddNode, isOpen, toggle }) =
       </div>
 
       <div className={`flex-1 overflow-y-auto custom-scrollbar pt-4 ${isOpen ? 'px-3' : 'hidden'}`}>
-        <NodeCategory title="Constants" icon={Hash}>
-          <NodeItem label="Float" icon={Hash} onClick={() => onAddNode('float')} />
-          <NodeItem label="Color" icon={Circle} onClick={() => onAddNode('color')} />
-          <NodeItem label="Vec2" icon={Square} onClick={() => onAddNode('vec2')} />
-          <NodeItem label="Vec3" icon={Triangle} onClick={() => onAddNode('vec3')} />
-        </NodeCategory>
-
-        <NodeCategory title="Attributes" icon={Target}>
-          <NodeItem label="UV Scale" icon={Grid} onClick={() => onAddNode('uv')} />
-          <NodeItem label="Normal" icon={Activity} onClick={() => onAddNode('normal')} />
-          <NodeItem label="Position" icon={Move} onClick={() => onAddNode('position')} />
-          <NodeItem label="Time" icon={Zap} onClick={() => onAddNode('time')} />
-        </NodeCategory>
-
-        <NodeCategory title="Math" icon={Activity}>
-          <NodeItem label="Add" icon={Plus} onClick={() => onAddNode('add')} />
-          <NodeItem label="Multiply" icon={X} onClick={() => onAddNode('mul')} />
-          <NodeItem label="Subtract" icon={Minus} onClick={() => onAddNode('sub')} />
-          <NodeItem label="Power" icon={Zap} onClick={() => onAddNode('pow')} />
-          <NodeItem label="Sin / Cos" icon={Waves} onClick={() => onAddNode('sin')} />
-          <NodeItem label="Floor" icon={Minimize2} onClick={() => onAddNode('floor')} />
-        </NodeCategory>
-
-        <NodeCategory title="Logic" icon={Combine}>
-          <NodeItem label="Mix (Lerp)" icon={Combine} onClick={() => onAddNode('mix')} />
-          <NodeItem label="Step" icon={Type} onClick={() => onAddNode('step')} />
-          <NodeItem label="Smoothstep" icon={Waves} onClick={() => onAddNode('smoothstep')} />
-        </NodeCategory>
-
-        <NodeCategory title="Patterns" icon={Grid}>
-          <NodeItem label="Checker" icon={Grid} onClick={() => onAddNode('checker')} />
-          <NodeItem label="Noise" icon={Activity} onClick={() => onAddNode('noise')} />
-        </NodeCategory>
+        {categories.map(([category, nodes]) => (
+           <div key={category} className="mb-6">
+             <div className="flex items-center gap-1.5 px-1 mb-2 text-zinc-600 font-bold text-[8px] uppercase tracking-wider">
+                <Box size={10} /> {category}
+             </div>
+             <div className="grid grid-cols-1 gap-0.5">
+                {nodes.map(node => (
+                   <NodeItem 
+                      key={node.type} 
+                      label={node.label} 
+                      icon={node.icon} 
+                      onClick={() => onAddNode(node.type)} 
+                   />
+                ))}
+             </div>
+           </div>
+        ))}
       </div>
       
       {isOpen && (
