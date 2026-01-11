@@ -178,7 +178,7 @@ export class CodeGenerator {
     
     if (outputNode) {
        // Added alphaTest to slots
-       ['color', 'roughness', 'metalness', 'normal', 'emissive', 'ao', 'opacity', 'position', 'depth', 'alphaTest'].forEach(slot => {
+       ['color', 'roughness', 'metalness', 'normal', 'emissive', 'ao', 'opacity', 'position', 'alphaTest'].forEach(slot => {
           const edge = edges.find(e => e.target === outputNode.id && e.targetHandle === slot);
           if (edge) {
              const varName = processNode(edge.source);
@@ -187,7 +187,7 @@ export class CodeGenerator {
              materialAssignments.push(`material.${slot}Node = ${val};`);
           } else if (outputNode.data.values?.[slot] !== undefined) {
              const v = outputNode.data.values[slot];
-             if ((slot === 'depth' || slot === 'alphaTest') && !v && v !== 0) return;
+             if ((slot === 'alphaTest') && !v && v !== 0) return;
 
              if (slot === 'color' || slot === 'emissive') {
                 addImport('color');
@@ -202,12 +202,6 @@ export class CodeGenerator {
        // Handle Properties
        if (outputNode.data.values?.transparent) {
            materialAssignments.push(`material.transparent = true;`);
-       }
-       if (outputNode.data.values?.depthWrite !== undefined) {
-           materialAssignments.push(`material.depthWrite = ${outputNode.data.values.depthWrite};`);
-       }
-       if (outputNode.data.values?.depthTest !== undefined) {
-           materialAssignments.push(`material.depthTest = ${outputNode.data.values.depthTest};`);
        }
     }
 

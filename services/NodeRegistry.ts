@@ -263,12 +263,12 @@ export const NODE_REGISTRY: NodeDefinition[] = [
   // --- Output ---
   { 
     type: NodeType.MATERIAL, label: 'Material Output', component: BaseNode, category: 'Output', icon: Box,
-    inputs: ['color', 'roughness', 'metalness', 'emissive', 'ao', 'normal', 'opacity', 'position', 'depth', 'alphaTest'], outputs: [],
+    inputs: ['color', 'roughness', 'metalness', 'emissive', 'ao', 'normal', 'opacity', 'position', 'alphaTest'], outputs: [],
     initialValues: { 
       color: '#ffffff', roughness: 0.2, metalness: 0.8, emissive: '#000000', ao: 1.0, 
-      normal: 0, opacity: 1.0, transparent: false, depthWrite: true, depthTest: true, position: 0, depth: 0, alphaTest: 0 
+      normal: 0, opacity: 1.0, transparent: false, position: 0, alphaTest: 0 
     },
-    meta: { settings: ['transparent', 'depthWrite', 'depthTest'] } 
+    meta: { settings: ['transparent'] } 
   }
 ];
 

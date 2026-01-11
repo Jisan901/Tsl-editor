@@ -200,31 +200,9 @@ export class MaterialCompiler {
       const material = new MeshStandardNodeMaterial();
       material.color = new THREE.Color(0xffffff); // Base fallback
       
-      // Detect Viewport Depth Texture usage. 
-      // If used, transparency MUST be enabled to prevent read/write cycles on the depth buffer 
-      // which crashes the WebGPU loop for opaque objects.
-      const hasDepthRead = nodes.some(n => 
-          n.type === NodeType.VIEWPORT_DEPTH_TEXTURE + 'Node' || 
-          n.type === NodeType.LINEAR_DEPTH + 'Node' ||
-          n.type === NodeType.PERSPECTIVE_DEPTH_TO_VIEW_Z + 'Node'
-      );
-
-      // Transparency: Use user setting, but force true if depth read is present.
-      material.transparent = hasDepthRead ? true : !!outputNode.data.values?.transparent;
-
-      // Depth Write: Default to true unless explicitly disabled
-      if (outputNode.data.values?.depthWrite !== undefined) {
-         material.depthWrite = outputNode.data.values.depthWrite;
-      } else {
-         material.depthWrite = true;
-      }
-      
-      // Depth Test: Default to true unless explicitly disabled
-      if (outputNode.data.values?.depthTest !== undefined) {
-         material.depthTest = outputNode.data.values.depthTest;
-      } else {
-         material.depthTest = true;
-      }
+      // Transparency: Only use the direct user toggle. 
+      // No longer forcing true based on presence of depth nodes.
+      material.transparent = !!outputNode.data.values?.transparent;
 
       // Helper to connect material slots
       const connectSlot = (handle: string, type: 'float'|'color' = 'float') => {
@@ -245,11 +223,10 @@ export class MaterialCompiler {
             if (handle === 'color' || handle === 'emissive') defaultVal = '#000000';
             if (handle === 'color') defaultVal = '#ffffff';
             if (handle === 'ao' || handle === 'opacity') defaultVal = 1.0;
-            if (handle === 'depth') defaultVal = 0; 
             if (handle === 'alphaTest') defaultVal = 0;
 
             // Optional slots that shouldn't be assigned if unused
-            if ((handle === 'depth' || handle === 'alphaTest') && !val && val !== 0) return null;
+            if ((handle === 'alphaTest') && !val && val !== 0) return null;
 
             return this.getUniform(outputNode.id, handle, val ?? defaultVal, type);
          }
@@ -261,9 +238,6 @@ export class MaterialCompiler {
       material.emissiveNode = connectSlot('emissive', 'color');
       material.aoNode = connectSlot('ao');
       material.opacityNode = connectSlot('opacity');
-      
-      const depthNode = connectSlot('depth');
-      if (depthNode) material.depthNode = depthNode;
       
       const alphaTestNode = connectSlot('alphaTest');
       if (alphaTestNode) material.alphaTestNode = alphaTestNode;
