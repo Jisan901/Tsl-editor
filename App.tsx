@@ -32,6 +32,7 @@ const Flow: React.FC = () => {
   // Export State
   const [exportCode, setExportCode] = useState<string | null>(null);
   const [exportTitle, setExportTitle] = useState('');
+  const [debugShader, setDebugShader] = useState<{ vertexShader: string, fragmentShader: string } | null>(null);
   
   const { deleteElements, fitView, setViewport } = useReactFlow();
 
@@ -203,13 +204,16 @@ const Flow: React.FC = () => {
           const code = CodeGenerator.generateTSL(nodes, edges);
           setExportTitle('Three.js Material (TSL)');
           setExportCode(code);
-      } else {
-          // Placeholder for WGSL/GLSL as it requires runtime renderer hook extraction
-          const placeholder = `// Exporting to ${type.toUpperCase()} from pure Node Graph is not yet fully supported without active renderer context.\n// \n// However, you can use the 'Three.js Material (TSL)' export to generate the code that creates this shader.`;
-          setExportTitle(`${type.toUpperCase()} Shader`);
-          setExportCode(placeholder);
+      } else if (type === 'glsl' || type === 'wgsl') {
+          if (debugShader) {
+              setExportTitle(`${type.toUpperCase()} Shader Source`);
+              setExportCode(`// --- VERTEX SHADER ---\n\n${debugShader.vertexShader}\n\n// --- FRAGMENT SHADER ---\n\n${debugShader.fragmentShader}`);
+          } else {
+              setExportTitle(`${type.toUpperCase()} Shader Source`);
+              setExportCode(`// Shader source not available yet.\n// Ensure the preview is running and has compiled successfully.`);
+          }
       }
-  }, [nodes, edges]);
+  }, [nodes, edges, debugShader]);
 
 
   // --- Flow Callbacks ---
@@ -270,7 +274,7 @@ const Flow: React.FC = () => {
             <Controls />
             
             <Panel position="top-right" className="z-20">
-                <PreviewCanvas nodes={nodes} edges={edges} />
+                <PreviewCanvas nodes={nodes} edges={edges} onShaderUpdate={setDebugShader} />
             </Panel>
 
             <Panel position="bottom-right" className="flex items-center gap-2 p-1.5 bg-zinc-900 border border-zinc-800 rounded shadow-lg">

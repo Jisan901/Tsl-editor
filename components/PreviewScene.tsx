@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { WebGPURenderer, MeshStandardNodeMaterial, PostProcessing } from 'three/webgpu';
@@ -7,15 +7,18 @@ import { pass } from 'three/tsl';
 interface PreviewSceneProps {
     material: MeshStandardNodeMaterial | null;
     activeModel: string;
+    onShaderUpdate?: (shader: { vertexShader: string, fragmentShader: string }) => void;
 }
 
-export const PreviewScene: React.FC<PreviewSceneProps> = ({ material, activeModel }) => {
+export const PreviewScene: React.FC<PreviewSceneProps> = ({ material, activeModel, onShaderUpdate }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const rendererRef = useRef<WebGPURenderer | null>(null);
     const postProcessingRef = useRef<PostProcessing | null>(null);
     const sceneRef = useRef<THREE.Scene | null>(null);
     const contentRef = useRef<THREE.Group | null>(null);
+    const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
     const requestRef = useRef<number | null>(null);
+    const [isRendererReady, setIsRendererReady] = useState(false);
 
     // 1. Init Renderer & Scene
     useEffect(() => {
@@ -29,6 +32,7 @@ export const PreviewScene: React.FC<PreviewSceneProps> = ({ material, activeMode
 
         const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
         camera.position.set(2.5, 2, 3.5);
+        cameraRef.current = camera;
 
         // WebGPURenderer with antialias: true and forceWebGL: true
         const renderer = new WebGPURenderer({ 
@@ -49,6 +53,9 @@ export const PreviewScene: React.FC<PreviewSceneProps> = ({ material, activeMode
                 containerRef.current.appendChild(renderer.domElement);
             }
             rendererRef.current = renderer;
+            
+            // Signal that renderer is ready to be used
+            setIsRendererReady(true);
 
             const postProcessing = new PostProcessing(renderer);
             const scenePass = pass(scene, camera);
@@ -123,11 +130,14 @@ export const PreviewScene: React.FC<PreviewSceneProps> = ({ material, activeMode
 
     // 2. Update Content based on activeModel or Material
     useEffect(() => {
-        if (!contentRef.current) return;
+        if (!contentRef.current || !isRendererReady) return;
         const group = contentRef.current;
         group.clear();
         
         const mat = material || new MeshStandardNodeMaterial({ color: 0x333333 });
+
+        // Expose to window for debugging
+        (window as any).material = mat;
         
         let heroMesh: THREE.Mesh;
 
@@ -193,7 +203,22 @@ export const PreviewScene: React.FC<PreviewSceneProps> = ({ material, activeMode
             group.add(heroMesh);
         }
 
-    }, [activeModel, material]);
+        // Debug Shader Code using getShaderAsync
+        if (rendererRef.current && sceneRef.current && cameraRef.current && heroMesh) {
+             // @ts-ignore
+             if (rendererRef.current.debug && rendererRef.current.debug.getShaderAsync) {
+                 // @ts-ignore
+                 rendererRef.current.debug.getShaderAsync(sceneRef.current, cameraRef.current, heroMesh)
+                 .then((shader) => {
+                     if (onShaderUpdate) onShaderUpdate(shader);
+                 })
+                 .catch((e) => {
+                     console.warn('Failed to get shader debug info', e);
+                 });
+             }
+        }
+
+    }, [activeModel, material, isRendererReady, onShaderUpdate]);
 
     return <div ref={containerRef} className="w-full h-full pointer-events-auto" />;
 };

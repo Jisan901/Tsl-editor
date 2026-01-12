@@ -8,9 +8,10 @@ import { PreviewScene } from './PreviewScene';
 interface PreviewCanvasProps {
   nodes: CustomNode[];
   edges: Edge[];
+  onShaderUpdate?: (shader: { vertexShader: string, fragmentShader: string }) => void;
 }
 
-const PreviewCanvasComponent: React.FC<PreviewCanvasProps> = ({ nodes, edges }) => {
+const PreviewCanvasComponent: React.FC<PreviewCanvasProps> = ({ nodes, edges, onShaderUpdate }) => {
   const [activeModel, setActiveModel] = useState<'sphere' | 'box' | 'torus' | 'intersection' | 'cubes'>('cubes');
   const [isExpanded, setIsExpanded] = useState(false);
   
@@ -22,7 +23,7 @@ const PreviewCanvasComponent: React.FC<PreviewCanvasProps> = ({ nodes, edges }) 
     <div className={`relative ${previewSize} bg-[#080808] rounded-lg overflow-hidden border border-zinc-800 shadow-2xl group transition-all duration-300`}>
       
       {/* 3D Scene */}
-      <PreviewScene material={material} activeModel={activeModel} />
+      <PreviewScene material={material} activeModel={activeModel} onShaderUpdate={onShaderUpdate} />
       
       {/* View Selector */}
       <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

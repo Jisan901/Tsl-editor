@@ -7,6 +7,7 @@ import { getNodeDefinition } from './NodeRegistry';
 
 export class MaterialCompiler {
   private uniformCache: Map<string, any>;
+  private tslCache: Map<string, any> = new Map();
 
   constructor(uniformCache: Map<string, any>) {
     this.uniformCache = uniformCache;
@@ -96,6 +97,10 @@ export class MaterialCompiler {
   }
 
   private buildGraph(nodeId: string, nodes: CustomNode[], edges: Edge[], visited: Set<string> = new Set()): any {
+    // 1. Check Cache
+    if (this.tslCache.has(nodeId)) return this.tslCache.get(nodeId);
+
+    // 2. Cycle Detection
     if (visited.has(nodeId)) return tsl.float(0);
     visited.add(nodeId);
 
@@ -140,10 +145,22 @@ export class MaterialCompiler {
          // We pass node.data as second arg to tslFn
     }
 
-    return def.tslFn(inputs, node.data);
+    const tslNode = def.tslFn(inputs, node.data);
+
+    // Set Name for Debugging (User Request)
+    if (tslNode && typeof tslNode.setName === 'function') {
+        const label = node.data.label || type;
+        const cleanName = `${label.replace(/[^a-zA-Z0-9]/g, '')}_${nodeId.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        tslNode.setName(cleanName);
+    }
+
+    this.tslCache.set(nodeId, tslNode);
+    return tslNode;
   }
 
   public compile(nodes: CustomNode[], edges: Edge[]): NodeMaterial | null {
+    this.tslCache.clear();
+
     const outputNode = nodes.find(n => n.type === 'materialNode' || n.type === 'basicMaterialNode');
     if (!outputNode) return null;
     
