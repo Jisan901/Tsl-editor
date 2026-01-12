@@ -1,28 +1,31 @@
+
 import * as tsl from 'three/tsl';
 import { NodeType } from '../../types';
 import { defineNode, standardOp, methodOp } from './utils';
 import { Plus, Minus, X, Divide, Percent, Zap, Activity, Waves, Minimize, Maximize, Minimize2, Scaling, Split } from 'lucide-react';
+import React from 'react';
 
 // Helper to create rotated icon
 function Maximize2Icon(props: any) { return React.createElement(Minimize2, { ...props, className: "rotate-180" }); }
-import React from 'react';
+
+const safe = (v: any) => v || tsl.float(0);
 
 export const mathNodes = [
     defineNode(NodeType.ADD, 'Add', 'Math', Plus, { inputs: ['a', 'b'], outputs: ['out'], initialValues: { a: 1.0, b: 1.0 } },
-        (i) => tsl.add(i.a, i.b),
-        (i, _, __, add) => { add?.('add'); return `${i.a}.add(${i.b})`; } // prefer method chaining for consistency usually, but tsl.add works too. Let's use method for add/sub/mul/div
+        (i) => tsl.add(safe(i.a), safe(i.b)),
+        (i, _, __, add) => { add?.('add'); return `${i.a || 'float(0)'}.add(${i.b || 'float(0)'})`; }
     ),
     defineNode(NodeType.SUB, 'Subtract', 'Math', Minus, { inputs: ['a', 'b'], outputs: ['out'], initialValues: { a: 1.0, b: 1.0 } },
-        (i) => tsl.sub(i.a, i.b),
-        (i, _, __, add) => { add?.('sub'); return `${i.a}.sub(${i.b})`; }
+        (i) => tsl.sub(safe(i.a), safe(i.b)),
+        (i, _, __, add) => { add?.('sub'); return `${i.a || 'float(0)'}.sub(${i.b || 'float(0)'})`; }
     ),
     defineNode(NodeType.MUL, 'Multiply', 'Math', X, { inputs: ['a', 'b'], outputs: ['out'], initialValues: { a: 1.0, b: 1.0 } },
-        (i) => tsl.mul(i.a, i.b),
-        (i, _, __, add) => { add?.('mul'); return `${i.a}.mul(${i.b})`; }
+        (i) => tsl.mul(safe(i.a), safe(i.b)),
+        (i, _, __, add) => { add?.('mul'); return `${i.a || 'float(0)'}.mul(${i.b || 'float(0)'})`; }
     ),
     defineNode(NodeType.DIV, 'Divide', 'Math', Divide, { inputs: ['a', 'b'], outputs: ['out'], initialValues: { a: 1.0, b: 1.0 } },
-        (i) => tsl.div(i.a, i.b),
-        (i, _, __, add) => { add?.('div'); return `${i.a}.div(${i.b})`; }
+        (i) => tsl.div(safe(i.a), safe(i.b)),
+        (i, _, __, add) => { add?.('div'); return `${i.a || 'float(0)'}.div(${i.b || 'float(0)'})`; }
     ),
     defineNode(NodeType.MOD, 'Modulo', 'Math', Percent, { inputs: ['a', 'b'], outputs: ['out'], initialValues: { a: 1.0, b: 1.0 } },
         ...standardOp(tsl.mod, 'mod', ['a', 'b'])
@@ -78,7 +81,7 @@ export const mathNodes = [
         ...standardOp(tsl.remap, 'remap', ['in', 'inLow', 'inHigh', 'outLow', 'outHigh'])
     ),
     defineNode(NodeType.SPLIT, 'Split / Separate', 'Math', Split, { inputs: ['in'], outputs: ['x', 'y', 'z', 'w'] },
-        (i) => i.in,
-        (i) => i.in // The swizzling happens at edge consumption
+        (i) => safe(i.in),
+        (i) => i.in || 'float(0)'
     ),
 ];

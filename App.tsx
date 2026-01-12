@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { 
   ReactFlow, 
@@ -14,7 +15,7 @@ import {
   OnEdgesChange,
   useReactFlow
 } from '@xyflow/react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, RotateCcw } from 'lucide-react';
 
 import { CustomNode, NodeType } from './types';
 import { PreviewCanvas } from './components/PreviewCanvas';
@@ -23,6 +24,7 @@ import { MenuBar } from './components/MenuBar';
 import { CodeViewer } from './components/CodeViewer';
 import { nodeTypes, getNodeDefinition } from './services/NodeRegistry';
 import { CodeGenerator } from './services/CodeGenerator';
+import { EXAMPLES } from './services/examples';
 
 const Flow: React.FC = () => {
   const [nodes, setNodes] = useState<CustomNode[]>([]);
@@ -77,84 +79,29 @@ const Flow: React.FC = () => {
      return newNode;
   }, [updateNodeData]);
 
-  // --- Initial Setup & Examples ---
+  // --- Example Loading ---
   const loadExample = useCallback((key: string) => {
-     const materialNode = createNode(NodeType.MATERIAL, { x: 800, y: 100 }, 'out');
-     let newNodes: CustomNode[] = [materialNode!];
-     let newEdges: Edge[] = [];
-
-     if (key === 'basic') {
-        const checker = createNode(NodeType.CHECKER, { x: 450, y: 150 }, 'check');
-        const uv = createNode(NodeType.UV, { x: 150, y: 150 }, 'uv');
-        if (uv) uv.data.value = 4.0;
-        newNodes.push(checker!, uv!);
-        newEdges = [
-            { id: 'e1', source: 'uv', target: 'check', targetHandle: 'uv' },
-            { id: 'e2', source: 'check', target: 'out', targetHandle: 'color' }
-        ];
-     } else if (key === 'depth') {
-        // Viewport Depth Demo (Texture read)
-        const depth = createNode(NodeType.VIEWPORT_DEPTH_TEXTURE, { x: 100, y: 150 }, 'depth');
-        const linear = createNode(NodeType.LINEAR_DEPTH, { x: 300, y: 150 }, 'linear');
-        const remap = createNode(NodeType.REMAP, { x: 500, y: 150 }, 'remap');
-        // Remap default values for depth
-        if (remap && remap.data.values) {
-            remap.data.values.inLow = 0;
-            remap.data.values.inHigh = 20; // approximate view range
-            remap.data.values.outLow = 0;
-            remap.data.values.outHigh = 1;
-        }
-        
-        newNodes.push(depth!, linear!, remap!);
-        newEdges = [
-            { id: 'e1', source: 'depth', target: 'linear', targetHandle: 'depth' },
-            { id: 'e2', source: 'linear', target: 'remap', targetHandle: 'in' },
-            { id: 'e3', source: 'remap', target: 'out', targetHandle: 'color' }
-        ];
-     } else if (key === 'fragment_depth') {
-        // Viewport Depth Constant (Current Fragment)
-        const depth = createNode(NodeType.VIEWPORT_DEPTH, { x: 100, y: 150 }, 'depth');
-        // Visualize depth (0..1) directly on color
-        newNodes.push(depth!);
-        newEdges = [
-            { id: 'e1', source: 'depth', target: 'out', targetHandle: 'color' }
-        ];
-     } else if (key === 'noise') {
-        const noise = createNode(NodeType.SIMPLEX_NOISE_2D, { x: 300, y: 150 }, 'noise');
-        const time = createNode(NodeType.TIME, { x: 50, y: 50 }, 'time');
-        const uv = createNode(NodeType.UV, { x: 50, y: 200 }, 'uv');
-        const add = createNode(NodeType.ADD, { x: 180, y: 150 }, 'add');
-        
-        newNodes.push(noise!, time!, uv!, add!);
-        newEdges = [
-            { id: 'e1', source: 'uv', target: 'add', targetHandle: 'b' },
-            { id: 'e2', source: 'time', target: 'add', targetHandle: 'a' },
-            { id: 'e3', source: 'add', target: 'noise', targetHandle: 'uv' },
-            { id: 'e4', source: 'noise', target: 'out', targetHandle: 'color' }
-        ];
-     } else if (key === 'fresnel') {
-        const normal = createNode(NodeType.NORMAL, { x: 100, y: 100 }, 'n');
-        const view = createNode(NodeType.VEC3, { x: 100, y: 250 }, 'v'); 
-        const dot = createNode(NodeType.DOT, { x: 300, y: 150 }, 'dot');
-        const oneminus = createNode(NodeType.ONE_MINUS, { x: 450, y: 150 }, 'inv');
-        const pow = createNode(NodeType.POW, { x: 600, y: 150 }, 'pow');
-        if(pow && pow.data.values) pow.data.values.b = 3.0;
-
-        newNodes.push(normal!, dot!, oneminus!, pow!);
-        newEdges = [
-             { id: 'e1', source: 'n', target: 'out', targetHandle: 'color' }
-        ];
-     }
-
-     setNodes(newNodes);
-     setEdges(newEdges);
-     setTimeout(() => fitView({ padding: 0.2 }), 100);
-
+      const example = EXAMPLES.find(e => e.key === key);
+      if (example) {
+          const { nodes: newNodes, edges: newEdges } = example.generate(createNode);
+          setNodes(newNodes);
+          setEdges(newEdges);
+          setTimeout(() => fitView({ padding: 0.2 }), 100);
+      } else {
+          console.warn(`Example ${key} not found.`);
+      }
   }, [createNode, fitView]);
+
+  const handleReset = useCallback(() => {
+     if(confirm("Reset to default material?")) {
+        loadExample('standard');
+     }
+  }, [loadExample]);
 
 
   useEffect(() => {
-    loadExample('basic');
+    // Initial Load
+    loadExample('hologram');
   }, [loadExample]);
 
   // --- Save / Load / Export Logic ---
@@ -175,10 +122,8 @@ const Flow: React.FC = () => {
       try {
         const json = JSON.parse(e.target?.result as string);
         if (json.nodes && json.edges) {
-            // Rehydrate nodes (restore functions like onChange)
             const hydratedNodes = json.nodes.map((n: any) => {
                 const def = getNodeDefinition(n.type);
-                // Merge loaded data with registry definition to ensure functions/icons exist
                 return {
                     ...n,
                     data: {
@@ -269,6 +214,7 @@ const Flow: React.FC = () => {
             onConnect={onConnect}
             nodeTypes={nodeTypes}
             colorMode="dark"
+            fitView
             >
             <Background color="#111113" gap={20} size={1} />
             <Controls />
@@ -277,26 +223,27 @@ const Flow: React.FC = () => {
                 <PreviewCanvas nodes={nodes} edges={edges} onShaderUpdate={setDebugShader} />
             </Panel>
 
-            <Panel position="bottom-right" className="flex items-center gap-2 p-1.5 bg-zinc-900 border border-zinc-800 rounded shadow-lg">
+            <Panel position="bottom-right" className="flex items-center gap-2 p-1.5 bg-zinc-900 border border-zinc-800 rounded shadow-lg z-50">
                 <button 
-                onClick={handleDeleteSelected} 
-                className="p-1.5 bg-zinc-800 hover:bg-red-950 text-zinc-500 hover:text-red-400 rounded transition-colors"
-                title="Delete Selected"
+                    onClick={handleDeleteSelected} 
+                    className="p-1.5 bg-zinc-800 hover:bg-red-950 text-zinc-500 hover:text-red-400 rounded transition-colors"
+                    title="Delete Selected"
                 >
-                <Trash2 size={12} />
+                    <Trash2 size={12} />
                 </button>
                 <div className="w-px h-3 bg-zinc-800" />
                 <button 
-                onClick={() => { if(confirm("Clear canvas?")) { setNodes([]); setEdges([]); }}} 
-                className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded transition-colors font-bold text-[8px] uppercase"
+                    onClick={() => { if(confirm("Clear canvas?")) { setNodes([]); setEdges([]); }}} 
+                    className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded transition-colors font-bold text-[8px] uppercase"
                 >
-                Clear
+                    Clear
                 </button>
                 <button 
-                onClick={() => loadExample('basic')} 
-                className="px-2 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded transition-colors font-bold text-[8px] uppercase"
+                    onClick={handleReset} 
+                    className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded transition-colors font-bold text-[8px] uppercase"
+                    title="Reset to Default"
                 >
-                Reset
+                    <RotateCcw size={10} /> Reset
                 </button>
             </Panel>
             </ReactFlow>

@@ -1,3 +1,4 @@
+
 import * as THREE from 'three';
 import * as tsl from 'three/tsl';
 import { MeshStandardNodeMaterial, MeshBasicNodeMaterial, NodeMaterial } from 'three/webgpu';
@@ -108,11 +109,29 @@ export class MaterialCompiler {
     if (!node) return tsl.float(0);
 
     const type = node.type?.replace('Node', '') as NodeType;
+    
+    // -- Special Handling for Data Nodes to enforce Uniforms --
+    // This allows real-time updates without recompilation by utilizing getUniform() 
+    // which registers the uniform in the cache for updateUniforms().
+    if (type === NodeType.FLOAT) {
+        const u = this.getUniform(nodeId, 'value', node.data.value, 'float');
+        if (node.data.label) u.setName(node.data.label);
+        this.tslCache.set(nodeId, u);
+        return u;
+    }
+    if (type === NodeType.COLOR) {
+        const u = this.getUniform(nodeId, 'value', node.data.value, 'color');
+        if (node.data.label) u.setName(node.data.label);
+        this.tslCache.set(nodeId, u);
+        return u;
+    }
+    // ---------------------------------------------------------
+
     const def = getNodeDefinition(type);
 
     if (!def) return tsl.float(0);
 
-    const resolveInput = (handle: string, defaultVal: any = 0) => {
+    const resolveInput = (handle: string, defaultVal: any = null) => {
       const edge = edges.find(e => e.target === nodeId && e.targetHandle === handle);
       if (edge) {
          const sourceVal = this.buildGraph(edge.source, nodes, edges, new Set(visited));
@@ -122,7 +141,9 @@ export class MaterialCompiler {
          return sourceVal;
       }
       
-      const localVal = node.data.values?.[handle] ?? node.data.value ?? defaultVal;
+      const localVal = node.data.values?.[handle] ?? node.data.value;
+      if (localVal === undefined) return defaultVal;
+      
       const isColor = typeof localVal === 'string' && localVal.startsWith('#');
       return this.getUniform(nodeId, handle, localVal, isColor ? 'color' : 'float');
     };
@@ -132,22 +153,17 @@ export class MaterialCompiler {
     
     // Explicit Inputs from definition
     def.inputs.forEach(inputKey => {
-         inputs[inputKey] = resolveInput(inputKey);
+         inputs[inputKey] = resolveInput(inputKey, null);
     });
     
     // Extra map for textures
     if (type === NodeType.TEXTURE || type === NodeType.TRIPLANAR) {
         inputs['map'] = this.getTexture(nodeId, node.data.value);
     }
-    // Special 'value' prop for UV/Constants
-    if (node.data.value !== undefined && def.inputs.length === 0) {
-         // For constants that don't have input sockets but produce output
-         // We pass node.data as second arg to tslFn
-    }
 
     const tslNode = def.tslFn(inputs, node.data);
 
-    // Set Name for Debugging (User Request)
+    // Set Name for Debugging
     if (tslNode && typeof tslNode.setName === 'function') {
         const label = node.data.label || type;
         const cleanName = `${label.replace(/[^a-zA-Z0-9]/g, '')}_${nodeId.replace(/[^a-zA-Z0-9]/g, '_')}`;
@@ -169,6 +185,10 @@ export class MaterialCompiler {
     try {
       const material = isBasic ? new MeshBasicNodeMaterial() : new MeshStandardNodeMaterial();
       material.transparent = !!outputNode.data.values?.transparent;
+      
+      if (outputNode.data.values?.side !== undefined) {
+          material.side = Number(outputNode.data.values.side);
+      }
 
       const connectSlot = (handle: string, type: 'float'|'color' = 'float') => {
          const edge = edges.find(e => e.target === outputNode.id && e.targetHandle === handle);
@@ -193,8 +213,6 @@ export class MaterialCompiler {
         // Basic Material mapping
         material.fragmentNode = connectSlot('fragment', 'color');
         material.opacityNode = connectSlot('opacity');
-        // Basic materials also have colorNode, but fragmentNode overrides usually.
-        // If we map fragment -> fragmentNode, that allows raw output control.
       } else {
         // Standard Material mapping
         const standardMat = material as MeshStandardNodeMaterial;

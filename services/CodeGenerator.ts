@@ -1,3 +1,4 @@
+
 import { CustomNode, NodeType } from '../types';
 import { Edge } from '@xyflow/react';
 import { getNodeDefinition } from './NodeRegistry';
@@ -10,6 +11,7 @@ export class CodeGenerator {
     
     const tslImports = new Set<string>();
     const webgpuImports = new Set<string>();
+    const threeImports = new Set<string>();
 
     const addImport = (name: string) => {
         if (name === 'MeshStandardNodeMaterial' || name === 'MeshBasicNodeMaterial') {
@@ -53,14 +55,13 @@ export class CodeGenerator {
          
          const val = node.data.values?.[handle] ?? node.data.value;
          
-         if (val === undefined) return undefined; // Let codeFn handle default
+         if (val === undefined) return undefined;
 
          if (typeof val === 'string') {
              if (val.startsWith('#')) {
                 addImport('color');
                 return `color('${val}')`;
              }
-             // It might be a number-string like "0.5" or "-"
              const n = parseFloat(val);
              if (!isNaN(n)) {
                  addImport('float');
@@ -87,12 +88,16 @@ export class CodeGenerator {
           const v = getInput(k);
           if (v) inputs[k] = v;
           else {
-              if (['a','b','x','y','z','w','in','value'].includes(k)) inputs[k] = 'float(0)';
-              else inputs[k] = 'float(0)';
+              // Don't default specific inputs like viewDir or uv to float(0)
+              // This allows the codeFn to handle the default logic
+              if (['viewDir', 'uv'].includes(k)) {
+                  // undefined
+              } else {
+                  inputs[k] = 'float(0)';
+              }
           }
       });
       
-      // Execute code generation
       const rhs = def.codeFn(inputs, node.data, varName, addImport);
       
       if (rhs.trim().startsWith('const ') || rhs.trim().startsWith('//')) {
@@ -104,7 +109,7 @@ export class CodeGenerator {
       return varName;
     };
     
-    // Find Material Node (Support both Standard and Basic)
+    // Find Material Node
     const outputNode = nodes.find(n => n.type === 'materialNode' || n.type === 'basicMaterialNode');
     const materialAssignments: string[] = [];
     let matType = 'MeshStandardNodeMaterial';
@@ -118,14 +123,14 @@ export class CodeGenerator {
            addImport('MeshStandardNodeMaterial');
        }
        
+       // Handle standard slots (excluding position)
        const slots = isBasic 
-            ? ['fragment', 'opacity', 'position'] 
-            : ['color', 'roughness', 'metalness', 'normal', 'emissive', 'ao', 'opacity', 'position'];
+            ? ['fragment', 'opacity'] 
+            : ['color', 'roughness', 'metalness', 'normal', 'emissive', 'ao', 'opacity'];
        
        slots.forEach(slot => {
           const edge = edges.find(e => e.target === outputNode.id && e.targetHandle === slot);
           let targetProp = `${slot}Node`;
-          // Special case for basic material fragment input
           if (isBasic && slot === 'fragment') targetProp = 'fragmentNode';
 
           if (edge) {
@@ -140,7 +145,6 @@ export class CodeGenerator {
                 materialAssignments.push(`material.${targetProp} = color('${v}');`);
              } else {
                 addImport('float');
-                // Handle potential string numbers here too
                 let n = v;
                 if(typeof v === 'string') n = parseFloat(v);
                 if(isNaN(n)) n = 0;
@@ -149,8 +153,30 @@ export class CodeGenerator {
           }
        });
 
+       // Handle Position Explicitly
+       const posEdge = edges.find(e => e.target === outputNode.id && e.targetHandle === 'position');
+       if (posEdge) {
+           addImport('positionLocal');
+           const varName = processNode(posEdge.source);
+           let val = varName;
+           if (posEdge.sourceHandle && posEdge.sourceHandle !== 'out') val += `.${posEdge.sourceHandle}`;
+           materialAssignments.push(`material.positionNode = positionLocal.add(${val});`);
+       }
+
        if (outputNode.data.values?.transparent) {
            materialAssignments.push(`material.transparent = true;`);
+       }
+
+       if (outputNode.data.values?.side !== undefined) {
+           const s = outputNode.data.values.side;
+           if (s === 1) {
+                threeImports.add('BackSide');
+                materialAssignments.push(`material.side = BackSide;`);
+           }
+           else if (s === 2) {
+                threeImports.add('DoubleSide');
+                materialAssignments.push(`material.side = DoubleSide;`);
+           }
        }
     } else {
         addImport('MeshStandardNodeMaterial');
@@ -163,8 +189,13 @@ export class CodeGenerator {
     const webgpuImportsString = webgpuImports.size > 0 
         ? `import { \n  ${Array.from(webgpuImports).join(', ')} \n} from 'three/webgpu';`
         : '';
+
+    const threeImportsString = threeImports.size > 0 
+        ? `import { \n  ${Array.from(threeImports).join(', ')} \n} from 'three';`
+        : '';
     
     return [
+      threeImportsString,
       tslImportsString,
       webgpuImportsString,
       '',

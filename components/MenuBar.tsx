@@ -1,5 +1,7 @@
+
 import React, { useRef } from 'react';
 import { Save, FolderOpen, FileCode, BookOpen } from 'lucide-react';
+import { EXAMPLES } from '../services/examples';
 
 interface MenuBarProps {
   onSave: () => void;
@@ -42,22 +44,17 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onSave, onLoad, onExport, onLo
             <button className="flex items-center gap-1.5 px-2 py-1 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 rounded transition-colors text-[10px] font-medium">
                 <BookOpen size={12} /> Examples
             </button>
-             <div className="absolute top-full left-0 mt-1 w-32 bg-zinc-900 border border-zinc-800 rounded-md shadow-xl overflow-hidden hidden group-hover:block z-50">
-                <button onClick={() => onLoadExample('basic')} className="w-full text-left px-3 py-2 text-[10px] text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">
-                    Basic UV
-                </button>
-                <button onClick={() => onLoadExample('noise')} className="w-full text-left px-3 py-2 text-[10px] text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">
-                    Noise
-                </button>
-                <button onClick={() => onLoadExample('depth')} className="w-full text-left px-3 py-2 text-[10px] text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">
-                    Viewport Depth Tex
-                </button>
-                 <button onClick={() => onLoadExample('fragment_depth')} className="w-full text-left px-3 py-2 text-[10px] text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">
-                    Fragment Depth
-                </button>
-                <button onClick={() => onLoadExample('fresnel')} className="w-full text-left px-3 py-2 text-[10px] text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">
-                    Fresnel
-                </button>
+             <div className="absolute top-full left-0 mt-1 w-44 bg-zinc-900 border border-zinc-800 rounded-md shadow-xl overflow-hidden hidden group-hover:block z-50">
+                {EXAMPLES.map((example, index) => (
+                    <button 
+                        key={example.key}
+                        onClick={() => onLoadExample(example.key)} 
+                        className={`w-full text-left px-3 py-2 text-[10px] text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors flex items-center gap-2 ${index !== EXAMPLES.length - 1 ? 'border-b border-zinc-800/50' : ''}`}
+                    >
+                        <example.icon size={10} className={example.iconColor || 'text-zinc-500'} /> 
+                        {example.label}
+                    </button>
+                ))}
             </div>
         </div>
         
@@ -81,7 +78,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onSave, onLoad, onExport, onLo
       </div>
 
       <div className="flex items-center gap-2 text-[9px] text-zinc-600">
-         <a href="https://github.com/mrdoob/three.js" target="_blank" className="hover:text-zinc-400 transition-colors">Three.js r182</a>
+         <span className="opacity-50">r182</span>
       </div>
     </div>
   );

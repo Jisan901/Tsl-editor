@@ -1,3 +1,4 @@
+
 import * as tsl from 'three/tsl';
 import { NodeType } from '../../types';
 import { defineNode, standardOp } from './utils';
@@ -19,11 +20,11 @@ export const effectNodes = [
     defineNode(NodeType.TRIPLANAR, 'Triplanar', 'Patterns & Textures', Box, { inputs: ['scale', 'normal', 'position'], outputs: ['out'], initialValues: { scale: 1.0 } },
         (i) => {
              const tex = tsl.texture(i.map);
-             return tsl.triplanarTexture(tex, tex, tex, i.scale, i.position, i.normal);
+             return tsl.triplanarTexture(tex, tex, tex, i.scale || tsl.float(1), i.position || tsl.float(0), i.normal || tsl.float(0));
         },
         (i, d, id, add) => {
              add?.('texture'); add?.('triplanarTexture');
-             return `const ${id}_tex = texture(textureLoader.load('${d.value || 'texture.jpg'}'));\nconst ${id} = triplanarTexture(${id}_tex, ${id}_tex, ${id}_tex, ${i.scale}, ${i.position}, ${i.normal});`;
+             return `const ${id}_tex = texture(textureLoader.load('${d.value || 'texture.jpg'}'));\nconst ${id} = triplanarTexture(${id}_tex, ${id}_tex, ${id}_tex, ${i.scale || '1.0'}, ${i.position || 'positionLocal'}, ${i.normal || 'normalLocal'});`;
         },
         TextureNode
     ),
@@ -38,8 +39,8 @@ export const effectNodes = [
     
     // --- Passes ---
     defineNode(NodeType.PASS, 'Pass', 'Patterns & Textures', Play, { inputs: ['in'], outputs: ['out'] },
-        (i) => tsl.pass(i.in),
-        (i, _, __, add) => { add?.('pass'); return `pass(${i.in})`; }
+        (i) => tsl.pass(i.in || tsl.float(0)),
+        (i, _, __, add) => { add?.('pass'); return `pass(${i.in || 'float(0)'})`; }
     ),
     defineNode(NodeType.DEPTH_PASS, 'Depth Pass', 'Patterns & Textures', Scan, { inputs: [], outputs: ['out'] },
         // depthPass usually requires scene/camera in TSL, we simulate a basic version or default
@@ -51,13 +52,20 @@ export const effectNodes = [
     // --- Effects & Math ---
     defineNode(NodeType.FRESNEL, 'Fresnel', 'Math', Zap, { inputs: ['viewDir', 'power'], outputs: ['out'], initialValues: { power: 5.0 } },
         (i) => {
+            // Default viewDir to normalize(positionView.negate()) if not connected (i.viewDir is null)
             const viewDir = i.viewDir || tsl.positionView.negate().normalize();
-            return tsl.pow(tsl.float(1).sub(tsl.dot(tsl.normalView, viewDir)), i.power);
+            const power = i.power || tsl.float(5.0);
+            return tsl.pow(tsl.float(1).sub(tsl.dot(tsl.normalView, viewDir)), power);
         },
         (i, _, id, add) => {
             add?.('pow'); add?.('dot'); add?.('normalView'); add?.('float');
             const viewDir = i.viewDir || 'normalize(positionView.negate())';
-            return `const ${id} = pow(float(1).sub(dot(normalView, ${viewDir})), ${i.power});`;
+            if (!i.viewDir) {
+                add?.('normalize');
+                add?.('positionView');
+            }
+            const power = i.power || '5.0';
+            return `const ${id} = pow(float(1).sub(dot(normalView, ${viewDir})), ${power});`;
         }
     ),
 
@@ -74,8 +82,8 @@ export const effectNodes = [
         }
     ),
     defineNode(NodeType.VIEWPORT_DEPTH_TEXTURE, 'Viewport Depth Tex', 'Depth', Layers, { inputs: ['uv'], outputs: ['out'] },
-        (i) => tsl.viewportDepthTexture(i.uv),
-        (i, _, __, add) => { add?.('viewportDepthTexture'); return `viewportDepthTexture(${i.uv || 'null'})`; }
+        (i) => tsl.viewportDepthTexture(i.uv), // tsl.viewportDepthTexture() is valid, it handles null uv implicitly or takes vec2
+        (i, _, __, add) => { add?.('viewportDepthTexture'); return `viewportDepthTexture(${i.uv || ''})`; }
     ),
     defineNode(NodeType.VIEWPORT_DEPTH, 'Viewport Depth', 'Depth', ArrowDown, { inputs: [], outputs: ['out'] },
         () => tsl.viewportDepth,
@@ -86,7 +94,7 @@ export const effectNodes = [
         (_, __, ___, add) => { add?.('viewportLinearDepth'); return `viewportLinearDepth`; }
     ),
     defineNode(NodeType.LINEAR_DEPTH, 'Linear Depth', 'Depth', ArrowDown, { inputs: ['depth', 'near', 'far'], outputs: ['out'] },
-        (i) => tsl.linearDepth(i.depth || tsl.viewportDepthTexture(), i.near, i.far),
+        (i) => tsl.linearDepth(i.depth || tsl.viewportDepthTexture(), i.near || tsl.cameraNear, i.far || tsl.cameraFar),
         (i, _, __, add) => { add?.('linearDepth'); add?.('viewportDepthTexture'); return `linearDepth(${i.depth || 'viewportDepthTexture()'}, ${i.near || 'cameraNear'}, ${i.far || 'cameraFar'})`; }
     ),
     defineNode(NodeType.CAMERA_NEAR, 'Camera Near', 'Depth', Minimize2, { inputs: [], outputs: ['out'] },
@@ -109,8 +117,8 @@ export const effectNodes = [
 
     // --- Tools ---
     defineNode(NodeType.PREVIEW, 'Preview', 'Tools', Eye, { inputs: ['in'], outputs: [] },
-        (i) => i.in,
-        (i) => i.in,
+        (i) => i.in || tsl.float(0),
+        (i) => i.in || 'float(0)',
         PreviewNode
     ),
 
@@ -121,21 +129,27 @@ export const effectNodes = [
             outputs: [],
             initialValues: { 
                 color: '#ffffff', roughness: 0.2, metalness: 0.8, emissive: '#000000', ao: 1.0, 
-                normal: 0, opacity: 1.0, transparent: false, position: 0 
+                normal: 0, opacity: 1.0, transparent: false, side: 0 
             },
-            meta: { settings: ['transparent'] }
+            meta: { 
+                settings: ['transparent'],
+                enums: { side: { options: { Front: 0, Back: 1, Double: 2 } } }
+            }
         },
-        () => tsl.float(0), // No-op for material compilation, special handled in compiler
-        () => '', // No-op for code gen
+        () => tsl.float(0), 
+        () => '', 
     ),
     defineNode(NodeType.BASIC_MATERIAL, 'Basic Material', 'Output', Zap, 
         { 
             inputs: ['fragment', 'opacity', 'position'], 
             outputs: [],
             initialValues: { 
-                fragment: '#ffffff', opacity: 1.0, transparent: false, position: 0 
+                fragment: '#ffffff', opacity: 1.0, transparent: false, side: 0 
             },
-            meta: { settings: ['transparent'] }
+            meta: { 
+                settings: ['transparent'],
+                enums: { side: { options: { Front: 0, Back: 1, Double: 2 } } }
+            }
         },
         () => tsl.float(0),
         () => '', 

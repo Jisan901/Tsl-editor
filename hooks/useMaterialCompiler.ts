@@ -1,12 +1,13 @@
+
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { CustomNode } from '../types';
 import { Edge } from '@xyflow/react';
 import { MaterialCompiler } from '../services/MaterialCompiler';
 import { CodeGenerator } from '../services/CodeGenerator';
-import { MeshStandardNodeMaterial } from 'three/webgpu';
+import { MeshStandardNodeMaterial, NodeMaterial } from 'three/webgpu';
 
 export function useMaterialCompiler(nodes: CustomNode[], edges: Edge[]) {
-  const [material, setMaterial] = useState<MeshStandardNodeMaterial | null>(null);
+  const [material, setMaterial] = useState<NodeMaterial | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   // Cache for TSL Uniform objects
@@ -18,12 +19,14 @@ export function useMaterialCompiler(nodes: CustomNode[], edges: Edge[]) {
 
   useEffect(() => {
     // Determine if rebuild is needed
-    const outputNode = nodes.find(n => n.type === 'materialNode');
+    const outputNode = nodes.find(n => n.type === 'materialNode' || n.type === 'basicMaterialNode');
+    
     const isTransparent = outputNode?.data.values?.transparent ? 'true' : 'false';
+    const side = outputNode?.data.values?.side ?? '0';
 
     const currentTopology = edges.map(e => `${e.source}:${e.sourceHandle}->${e.target}:${e.targetHandle}`).sort().join('|') + 
                             nodes.map(n => `${n.id}:${n.type}`).sort().join('|') + 
-                            isTransparent; 
+                            isTransparent + ':' + side; 
 
     const needsRebuild = currentTopology !== topologyHash.current;
 

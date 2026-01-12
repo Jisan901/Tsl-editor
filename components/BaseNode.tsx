@@ -1,3 +1,4 @@
+
 import React, { memo } from 'react';
 import { Handle, Position, useEdges } from '@xyflow/react';
 
@@ -72,10 +73,11 @@ export const BaseNode: React.FC<BaseNodeProps> = memo(({ id, data, selected }) =
           );
         })}
 
-        {/* Toggles for settings (Material Node) */}
-        {data.meta?.settings && (
+        {/* Toggles (Settings) & Enums */}
+        {(data.meta?.settings || data.meta?.enums) && (
             <div className="mt-2 pt-2 border-t border-zinc-900 space-y-1.5">
-                {(data.meta.settings as string[]).map(setting => (
+                {/* Checkboxes */}
+                {data.meta.settings?.map((setting: string) => (
                     <div key={setting} className="flex items-center justify-between px-1">
                         <span className="text-[7px] font-bold uppercase text-zinc-500">{setting.replace(/([A-Z])/g, ' $1').trim()}</span>
                         <input 
@@ -86,10 +88,26 @@ export const BaseNode: React.FC<BaseNodeProps> = memo(({ id, data, selected }) =
                         />
                     </div>
                 ))}
+
+                {/* Dropdowns */}
+                {data.meta.enums && Object.entries(data.meta.enums).map(([key, config]: [string, any]) => (
+                    <div key={key} className="flex items-center justify-between px-1">
+                         <span className="text-[7px] font-bold uppercase text-zinc-500">{key}</span>
+                         <select 
+                            value={data.values?.[key] ?? 0}
+                            onChange={(e) => data.onChange?.(key, parseInt(e.target.value))}
+                            className="bg-zinc-900 text-zinc-300 text-[8px] border border-zinc-800 rounded px-1 py-0.5 focus:outline-none cursor-pointer hover:bg-zinc-800"
+                         >
+                            {Object.entries(config.options).map(([label, val]: [string, any]) => (
+                                <option key={label} value={val}>{label}</option>
+                            ))}
+                         </select>
+                    </div>
+                ))}
             </div>
         )}
         
-        {/* Legacy Support (if still used) */}
+        {/* Legacy Support */}
         {data.meta?.showTransparencyToggle && !data.meta?.settings && (
              <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-900 px-1">
                 <span className="text-[7px] font-bold uppercase text-zinc-500">Transparent</span>

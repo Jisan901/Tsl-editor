@@ -1,3 +1,4 @@
+
 import React from 'react';
 import * as tsl from 'three/tsl';
 import { NodeType } from '../../types';
@@ -51,6 +52,8 @@ export const defineNode = (
     };
 };
 
+const safe = (v: any) => v || tsl.float(0);
+
 // Helper for standard function calls like add(a, b)
 export const standardOp = (
     op: any, 
@@ -58,10 +61,11 @@ export const standardOp = (
     inputs: string[]
 ): [TSLGenerator, CodeGeneratorFn] => {
     return [
-        (inps) => op(...inputs.map(k => inps[k])),
+        (inps) => op(...inputs.map(k => safe(inps[k]))),
         (inps, _, __, addImport) => {
             if(addImport) addImport(tslOpName);
-            const args = inputs.map(k => inps[k]).join(', ');
+            // safe check for code gen string too
+            const args = inputs.map(k => inps[k] || 'float(0)').join(', ');
             return `${tslOpName}(${args})`;
         }
     ];
@@ -69,22 +73,23 @@ export const standardOp = (
 
 // Helper for method calls like a.add(b)
 export const methodOp = (
-    op: any, // Not used directly in generic tslFn if we assume TSL nodes have methods, but useful for reference
+    op: any, 
     methodName: string,
     primaryInput: string,
     args: string[],
-    tslOpName?: string // If import name differs from method name
+    tslOpName?: string 
 ): { tslFn: TSLGenerator, codeFn: CodeGeneratorFn } => {
     return {
         tslFn: (inps) => {
-            const main = inps[primaryInput];
-            if (!main || !main[methodName]) return tsl.float(0); // Guard
-            return main[methodName](...args.map(k => inps[k]));
+            const main = safe(inps[primaryInput]);
+            if (!main || !main[methodName]) return tsl.float(0); 
+            return main[methodName](...args.map(k => safe(inps[k])));
         },
         codeFn: (inps, _, __, addImport) => {
             if(addImport && tslOpName) addImport(tslOpName);
-            const argStr = args.map(k => inps[k]).join(', ');
-            return `${inps[primaryInput]}.${methodName}(${argStr})`;
+            const main = inps[primaryInput] || 'float(0)';
+            const argStr = args.map(k => inps[k] || 'float(0)').join(', ');
+            return `${main}.${methodName}(${argStr})`;
         }
     };
 };

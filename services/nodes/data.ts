@@ -1,7 +1,11 @@
+
 import * as tsl from 'three/tsl';
 import { NodeType } from '../../types';
 import { defineNode, standardOp } from './utils';
 import { Hash, Circle, Square, Triangle, Grid, Activity, Move, Zap, Combine, Type, Waves, Globe, Map as MapIcon, BoxSelect, ArrowDown, Compass } from 'lucide-react';
+
+const safe = (v: any) => v || tsl.float(0);
+const safeCode = (v: string) => v || '0.0';
 
 export const dataNodes = [
     // --- Constants ---
@@ -14,16 +18,16 @@ export const dataNodes = [
         (_, d, id, add) => { add?.('color'); return `const ${id} = color('${d.value ?? '#fff'}');`; }
     ),
     defineNode(NodeType.VEC2, 'Vec2', 'Constants', Square, { inputs: ['x', 'y'], outputs: ['out'], initialValues: { x: 0, y: 0 } },
-        (i) => tsl.vec2(i.x, i.y),
-        (i, _, id, add) => { add?.('vec2'); return `const ${id} = vec2(${i.x}, ${i.y});`; }
+        (i) => tsl.vec2(safe(i.x), safe(i.y)),
+        (i, _, id, add) => { add?.('vec2'); return `const ${id} = vec2(${safeCode(i.x)}, ${safeCode(i.y)});`; }
     ),
     defineNode(NodeType.VEC3, 'Vec3', 'Constants', Triangle, { inputs: ['x', 'y', 'z'], outputs: ['out'], initialValues: { x: 0, y: 0, z: 0 } },
-        (i) => tsl.vec3(i.x, i.y, i.z),
-        (i, _, id, add) => { add?.('vec3'); return `const ${id} = vec3(${i.x}, ${i.y}, ${i.z});`; }
+        (i) => tsl.vec3(safe(i.x), safe(i.y), safe(i.z)),
+        (i, _, id, add) => { add?.('vec3'); return `const ${id} = vec3(${safeCode(i.x)}, ${safeCode(i.y)}, ${safeCode(i.z)});`; }
     ),
     defineNode(NodeType.VEC4, 'Vec4', 'Constants', Triangle, { inputs: ['x', 'y', 'z', 'w'], outputs: ['out'], initialValues: { x: 0, y: 0, z: 0, w: 0 } },
-        (i) => tsl.vec4(i.x, i.y, i.z, i.w),
-        (i, _, id, add) => { add?.('vec4'); return `const ${id} = vec4(${i.x}, ${i.y}, ${i.z}, ${i.w});`; }
+        (i) => tsl.vec4(safe(i.x), safe(i.y), safe(i.z), safe(i.w)),
+        (i, _, id, add) => { add?.('vec4'); return `const ${id} = vec4(${safeCode(i.x)}, ${safeCode(i.y)}, ${safeCode(i.z)}, ${safeCode(i.w)});`; }
     ),
 
     // --- Attributes ---
