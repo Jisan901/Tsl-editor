@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { WebGPURenderer, MeshStandardNodeMaterial, PostProcessing } from 'three/webgpu';
 import { pass } from 'three/tsl';
+// @ts-ignore
 
 interface PreviewSceneProps {
     material: MeshStandardNodeMaterial | null;
@@ -43,6 +44,7 @@ export const PreviewScene: React.FC<PreviewSceneProps> = ({ material, activeMode
         // @ts-ignore
         renderer.init().then(() => {
             renderer.setSize(width, height);
+            
             renderer.toneMapping = THREE.ReinhardToneMapping;
             renderer.toneMappingExposure = 1.0;
             renderer.shadowMap.enabled = true;
@@ -54,13 +56,28 @@ export const PreviewScene: React.FC<PreviewSceneProps> = ({ material, activeMode
             }
             rendererRef.current = renderer;
             
-            // Signal that renderer is ready to be used
             setIsRendererReady(true);
 
-            const postProcessing = new PostProcessing(renderer);
-            const scenePass = pass(scene, camera);
-            postProcessing.outputNode = scenePass;
-            postProcessingRef.current = postProcessing;
+            // Setup PostProcessing
+            try {
+                const postProcessing = new PostProcessing(renderer);
+                
+                const scenePass = pass(scene, camera);
+                
+                postProcessing.outputNode = scenePass;
+                postProcessingRef.current = postProcessing;
+            } catch (e) {
+                console.error("Failed to setup PostProcessing", e);
+            }
+        }).catch(e => {
+            console.error("Failed to init WebGPURenderer", e);
+            if (document.getElementById('fatal-error-display')) {
+                const el = document.getElementById('fatal-error-display');
+                if(el) {
+                    el.textContent = 'Renderer Init Failed: ' + e.message;
+                    el.style.display = 'block';
+                }
+            }
         });
 
         // Environment
@@ -112,7 +129,12 @@ export const PreviewScene: React.FC<PreviewSceneProps> = ({ material, activeMode
         // Render Loop
         const animate = () => {
              if (postProcessingRef.current) {
-                 postProcessingRef.current.render();
+                 try {
+                    postProcessingRef.current.render();
+                 } catch(e) {
+                    console.warn("PostProcessing render failed, falling back", e);
+                    postProcessingRef.current = null; 
+                 }
              } else if (rendererRef.current) {
                  rendererRef.current.render(scene, camera);
              }
@@ -209,11 +231,11 @@ export const PreviewScene: React.FC<PreviewSceneProps> = ({ material, activeMode
              if (rendererRef.current.debug && rendererRef.current.debug.getShaderAsync) {
                  // @ts-ignore
                  rendererRef.current.debug.getShaderAsync(sceneRef.current, cameraRef.current, heroMesh)
-                 .then((shader) => {
+                 .then((shader: any) => {
                      if (onShaderUpdate) onShaderUpdate(shader);
                  })
-                 .catch((e) => {
-                     console.warn('Failed to get shader debug info', e);
+                 .catch((e: any) => {
+                     // console.warn('Failed to get shader debug info', e);
                  });
              }
         }

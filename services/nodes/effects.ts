@@ -47,16 +47,35 @@ export const effectNodes = [
         () => tsl.depthPass(undefined, undefined),
         (_, __, ___, add) => { add?.('depthPass'); return `depthPass(scene, camera)`; }
     ),
-
+    
+    // --- Effects & Math ---
+    defineNode(NodeType.FRESNEL, 'Fresnel', 'Math', Zap, { inputs: ['viewDir', 'power'], outputs: ['out'], initialValues: { power: 5.0 } },
+        (i) => {
+            const viewDir = i.viewDir || tsl.positionView.negate().normalize();
+            return tsl.pow(tsl.float(1).sub(tsl.dot(tsl.normalView, viewDir)), i.power);
+        },
+        (i, _, id, add) => {
+            add?.('pow'); add?.('dot'); add?.('normalView'); add?.('float');
+            const viewDir = i.viewDir || 'normalize(positionView.negate())';
+            return `const ${id} = pow(float(1).sub(dot(normalView, ${viewDir})), ${i.power});`;
+        }
+    ),
 
     // --- Depth ---
     defineNode(NodeType.DEPTH, 'Fragment Depth', 'Depth', ArrowDown, { inputs: [], outputs: ['out'] },
         () => tsl.depth,
         (_, __, ___, add) => { add?.('depth'); return `depth`; }
     ),
-    defineNode(NodeType.VIEWPORT_DEPTH_TEXTURE, 'Viewport Depth Tex', 'Depth', Layers, { inputs: ['uv', 'level'], outputs: ['out'] },
-        (i) => tsl.viewportDepthTexture(i.uv, i.level),
-        (i, _, __, add) => { add?.('viewportDepthTexture'); return `viewportDepthTexture(${i.uv || 'null'}, ${i.level})`; }
+    defineNode(NodeType.SCENE_VIEW_Z, 'Scene View Z', 'Depth', ArrowDown, { inputs: ['depth', 'near', 'far'], outputs: ['out'] },
+        (i) => tsl.perspectiveDepthToViewZ(i.depth || tsl.viewportDepthTexture(), i.near || tsl.cameraNear, i.far || tsl.cameraFar).mul(1).toVar(),
+        (i, _, id, add) => { 
+            add?.('perspectiveDepthToViewZ'); 
+            return `const ${id} = perspectiveDepthToViewZ(${i.depth || 'viewportDepthTexture()'}, ${i.near || 'cameraNear'}, ${i.far || 'cameraFar'}).mul(1).toVar();`; 
+        }
+    ),
+    defineNode(NodeType.VIEWPORT_DEPTH_TEXTURE, 'Viewport Depth Tex', 'Depth', Layers, { inputs: ['uv'], outputs: ['out'] },
+        (i) => tsl.viewportDepthTexture(i.uv),
+        (i, _, __, add) => { add?.('viewportDepthTexture'); return `viewportDepthTexture(${i.uv || 'null'})`; }
     ),
     defineNode(NodeType.VIEWPORT_DEPTH, 'Viewport Depth', 'Depth', ArrowDown, { inputs: [], outputs: ['out'] },
         () => tsl.viewportDepth,

@@ -165,12 +165,19 @@ export class NodeEngine {
       case NodeType.LINEAR_DEPTH:
           return f(input('depth')); // Pass through for preview
       
+      case NodeType.SCENE_VIEW_Z:
       case NodeType.LOGARITHMIC_DEPTH_TO_VIEW_Z:
       case NodeType.PERSPECTIVE_DEPTH_TO_VIEW_Z: 
           return f(input('depth')) * 10; 
 
       case NodeType.VIEW_Z_TO_ORTHOGRAPHIC_DEPTH: 
           return f(input('viewZ')) / 10;
+          
+      case NodeType.VIEW_Z:
+          return 0; // View Z approx for flat preview
+          
+      case NodeType.VIEW_DIRECTION:
+          return new THREE.Vector3(0, 0, 1);
 
       case NodeType.CAMERA_NEAR: return 0.1;
       case NodeType.CAMERA_FAR: return 100.0;
@@ -183,6 +190,16 @@ export class NodeEngine {
       case NodeType.POSITION_VIEW:
       case NodeType.MODEL_VIEW_POSITION:
           return new THREE.Vector3(context.uv.x, context.uv.y, 0);
+          
+      case NodeType.FRESNEL: {
+          const power = f(input('power', 5.0));
+          const viewDir = v3(input('viewDir')); 
+          const norm = v3(input('normal')) || new THREE.Vector3(0,0,1);
+          // If viewDir input is missing, default to (0,0,1) for preview
+          const vd = (viewDir.lengthSq() === 0) ? new THREE.Vector3(0,0,1) : viewDir;
+          const dot = Math.max(0, norm.dot(vd));
+          return Math.pow(1.0 - dot, power);
+      }
 
       case NodeType.SPLIT: return input('in'); 
       case NodeType.PREVIEW: return input('in');

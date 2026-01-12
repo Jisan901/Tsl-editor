@@ -61,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onAddNode, isOpen, toggle }) =
       
       {isOpen && (
         <div className="p-3 border-t border-zinc-900 text-[9px] text-zinc-600 font-mono">
-          TSL v0.170.0
+          TSL v0.182.0
         </div>
       )}
     </div>

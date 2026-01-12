@@ -1,7 +1,7 @@
 import * as tsl from 'three/tsl';
 import { NodeType } from '../../types';
 import { defineNode, standardOp } from './utils';
-import { Hash, Circle, Square, Triangle, Grid, Activity, Move, Zap, Combine, Type, Waves, Globe, Map as MapIcon, BoxSelect } from 'lucide-react';
+import { Hash, Circle, Square, Triangle, Grid, Activity, Move, Zap, Combine, Type, Waves, Globe, Map as MapIcon, BoxSelect, ArrowDown, Compass } from 'lucide-react';
 
 export const dataNodes = [
     // --- Constants ---
@@ -54,6 +54,14 @@ export const dataNodes = [
     defineNode(NodeType.POSITION_VIEW, 'Position (View)', 'Attributes', Move, { inputs: [], outputs: ['out'] },
         () => tsl.positionView,
         (_, __, id, add) => { add?.('positionView'); return `const ${id} = positionView;`; }
+    ),
+    defineNode(NodeType.VIEW_Z, 'View Z', 'Attributes', ArrowDown, { inputs: [], outputs: ['out'] },
+        () => tsl.positionView.z.mul(1).toVar(),
+        (_, __, id, add) => { add?.('positionView'); return `const ${id} = positionView.z.mul(1).toVar();`; }
+    ),
+    defineNode(NodeType.VIEW_DIRECTION, 'View Direction', 'Attributes', Compass, { inputs: [], outputs: ['out'] },
+        () => tsl.normalize(tsl.positionView.negate()),
+        (_, __, id, add) => { add?.('positionView'); add?.('normalize'); return `const ${id} = normalize(positionView.negate());`; }
     ),
     defineNode(NodeType.MODEL_VIEW_POSITION, 'ModelView Position', 'Attributes', Globe, { inputs: [], outputs: ['out'] },
         () => tsl.modelViewPosition,

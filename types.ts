@@ -18,6 +18,8 @@ export enum NodeType {
   NORMAL_VIEW = 'normalView', // New
   POSITION = 'position',
   POSITION_VIEW = 'positionView', // New
+  VIEW_Z = 'viewZ', // New
+  VIEW_DIRECTION = 'viewDirection', // New
   MODEL_VIEW_POSITION = 'modelViewPosition', // New
   TIME = 'time',
   
@@ -58,6 +60,7 @@ export enum NodeType {
   MIX = 'mix',
   STEP = 'step',
   SMOOTHSTEP = 'smoothstep',
+  FRESNEL = 'fresnel', // New
   
   // Patterns
   SIMPLEX_NOISE_2D = 'simplexNoise2d', 
@@ -67,6 +70,7 @@ export enum NodeType {
   VIEWPORT_LINEAR_DEPTH = 'viewportLinearDepth', // New
 
   // Depth
+  SCENE_VIEW_Z = 'sceneViewZ', // New
   LINEAR_DEPTH = 'linearDepth',
   CAMERA_NEAR = 'cameraNear',
   CAMERA_FAR = 'cameraFar',

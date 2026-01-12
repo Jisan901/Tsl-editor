@@ -7,9 +7,17 @@ export class CodeGenerator {
     const lines: string[] = [];
     const visited = new Set<string>();
     const varNames = new Map<string, string>();
-    const imports = new Set<string>();
+    
+    const tslImports = new Set<string>();
+    const webgpuImports = new Set<string>();
 
-    const addImport = (name: string) => imports.add(name);
+    const addImport = (name: string) => {
+        if (name === 'MeshStandardNodeMaterial' || name === 'MeshBasicNodeMaterial') {
+            webgpuImports.add(name);
+        } else {
+            tslImports.add(name);
+        }
+    };
 
     const getVarName = (id: string, type: string) => {
       if (!varNames.has(id)) {
@@ -148,16 +156,23 @@ export class CodeGenerator {
         addImport('MeshStandardNodeMaterial');
     }
 
-    const importsString = `import { \n  ${Array.from(imports).join(', ')} \n} from 'three/tsl';`;
+    const tslImportsString = tslImports.size > 0 
+        ? `import { \n  ${Array.from(tslImports).join(', ')} \n} from 'three/tsl';`
+        : '';
+        
+    const webgpuImportsString = webgpuImports.size > 0 
+        ? `import { \n  ${Array.from(webgpuImports).join(', ')} \n} from 'three/webgpu';`
+        : '';
     
     return [
-      importsString,
+      tslImportsString,
+      webgpuImportsString,
       '',
       '// TSL Graph Generation',
       ...lines,
       '',
       `const material = new ${matType}();`,
       ...materialAssignments,
-    ].join('\n');
+    ].filter(s => s !== '').join('\n');
   }
 }
