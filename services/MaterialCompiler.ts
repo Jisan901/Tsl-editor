@@ -111,8 +111,6 @@ export class MaterialCompiler {
     const type = node.type?.replace('Node', '') as NodeType;
     
     // -- Special Handling for Data Nodes to enforce Uniforms --
-    // This allows real-time updates without recompilation by utilizing getUniform() 
-    // which registers the uniform in the cache for updateUniforms().
     if (type === NodeType.FLOAT) {
         const u = this.getUniform(nodeId, 'value', node.data.value, 'float');
         if (node.data.label) u.setName(node.data.label);
@@ -151,8 +149,10 @@ export class MaterialCompiler {
     // Prepare inputs map
     const inputs: Record<string, any> = {};
     
-    // Explicit Inputs from definition
-    def.inputs.forEach(inputKey => {
+    // Explicit Inputs from definition OR Dynamic inputs from node.data (for CodeNode)
+    const inputKeys = node.data.inputs || def.inputs;
+    
+    inputKeys.forEach(inputKey => {
          inputs[inputKey] = resolveInput(inputKey, null);
     });
     

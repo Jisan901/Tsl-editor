@@ -1,12 +1,13 @@
 
-
 import * as tsl from 'three/tsl';
 import { NodeType } from '../../types';
 import { defineNode, standardOp } from './utils';
-import { Image as ImageIcon, Box, Grid, Waves, Layers, ArrowDown, Minimize2, Maximize, Eye, Play, Scan, Zap } from 'lucide-react';
+import { Image as ImageIcon, Box, Grid, Waves, Layers, ArrowDown, Minimize2, Maximize, Eye, Play, Scan, Zap, MessageSquare, Code } from 'lucide-react';
 import { simplexNoise2D } from '../ExtraNodes';
 import { TextureNode } from '../../components/TextureNode';
 import { PreviewNode } from '../../components/PreviewNode';
+import { CommentNode } from '../../components/CommentNode';
+import { CodeNode } from '../../components/CodeNode';
 
 export const effectNodes = [
     // --- Patterns & Textures ---
@@ -117,6 +118,38 @@ export const effectNodes = [
         (i) => i.in || tsl.float(0),
         (i) => i.in || 'float(0)',
         PreviewNode
+    ),
+    defineNode(NodeType.COMMENT, 'Comment', 'Tools', MessageSquare, { inputs: [], outputs: [], initialValue: '' },
+        () => '',
+        (_, d) => `// ${d.value || ''}`,
+        CommentNode
+    ),
+    defineNode(NodeType.CODE, 'Code', 'Tools', Code, { inputs: [], outputs: [] },
+        (i, d) => {
+            if (!d.code) return tsl.float(0);
+            try {
+                // Execute user code to get the return object
+                const func = new Function('tsl', 'inputs', d.code);
+                const result = func(tsl, i); // 'i' contains the resolved inputs map from MaterialCompiler
+                
+                if (result && result.outputs) {
+                    if (Array.isArray(result.outputs)) {
+                        // Array of objects [{key: val}, {key2: val}] -> convert to flat object for buildGraph usage
+                        const outObj: any = {};
+                        result.outputs.forEach((o: any) => Object.assign(outObj, o));
+                        return outObj;
+                    }
+                    // Object { key: val }
+                    return result.outputs;
+                }
+                return result || tsl.float(0);
+            } catch (e) {
+                console.warn("Code Node Runtime Error", e);
+                return tsl.float(0);
+            }
+        },
+        (_, d) => `// Custom Code Node (Dynamic)\n/*\n${d.code || ''}\n*/`,
+        CodeNode
     ),
 
     // --- Output ---

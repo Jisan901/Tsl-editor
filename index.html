@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,6 +22,17 @@
         .react-flow__controls { background: #18181b !important; border: 1px solid #27272a !important; border-radius: 4px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important; }
         .react-flow__controls-button { border-bottom: 1px solid #27272a !important; fill: #71717a !important; }
         .react-flow__attribution { display: none; }
+        
+        /* PrismJS Theme Adjustment */
+        code[class*="language-"], pre[class*="language-"] { font-family: 'Menlo', 'Monaco', monospace !important; font-size: 10px !important; text-shadow: none !important; }
+        .token.comment, .token.prolog, .token.doctype, .token.cdata { color: #52525b; }
+        .token.punctuation { color: #a1a1aa; }
+        .token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol, .token.deleted { color: #f472b6; }
+        .token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted { color: #a78bfa; }
+        .token.operator, .token.entity, .token.url, .language-css .token.string, .style .token.string { color: #e879f9; }
+        .token.atrule, .token.attr-value, .token.keyword { color: #60a5fa; }
+        .token.function, .token.class-name { color: #fbbf24; }
+        .token.regex, .token.important, .token.variable { color: #fb7185; }
     </style>
 
     <script type="importmap">
@@ -38,6 +50,8 @@
     "three/examples/jsm/loaders/RGBELoader": "https://esm.sh/three@0.182.0/examples/jsm/loaders/RGBELoader.js?external=three",
     "lucide-react": "https://esm.sh/lucide-react@0.460.0?external=react",
     "@xyflow/react": "https://esm.sh/@xyflow/react@12.10.0?bundle&external=react,react-dom",
+    "react-code-jar": "https://esm.sh/react-code-jar@1.0.0?external=react,react-dom",
+    "prismjs": "https://esm.sh/prismjs@1.29.0",
     "react/": "https://esm.sh/react@^19.2.3/",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "three/": "https://esm.sh/three@0.182.0/"

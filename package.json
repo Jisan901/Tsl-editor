@@ -13,7 +13,9 @@
     "react-dom": "^19.2.3",
     "three": "0.182.0",
     "lucide-react": "0.460.0",
-    "@xyflow/react": "12.10.0"
+    "@xyflow/react": "12.10.0",
+    "react-code-jar": "1.0.0",
+    "prismjs": "1.29.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

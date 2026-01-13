@@ -88,6 +88,8 @@ export enum NodeType {
   // Utility
   SPLIT = 'split',
   PREVIEW = 'preview',
+  COMMENT = 'comment', // New
+  CODE = 'code', // New
   
   // Output
   MATERIAL = 'material',
@@ -101,6 +103,7 @@ export interface NodeData {
   onChange?: (key: string, value: any) => void;
   inputs?: string[];
   outputs?: string[];
+  code?: string; // For CodeNode
   [key: string]: unknown;
 }
 
