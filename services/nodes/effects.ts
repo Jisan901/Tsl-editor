@@ -1,4 +1,5 @@
 
+
 import * as tsl from 'three/tsl';
 import { NodeType } from '../../types';
 import { defineNode, standardOp } from './utils';
@@ -85,17 +86,13 @@ export const effectNodes = [
         (i) => tsl.viewportDepthTexture(i.uv), // tsl.viewportDepthTexture() is valid, it handles null uv implicitly or takes vec2
         (i, _, __, add) => { add?.('viewportDepthTexture'); return `viewportDepthTexture(${i.uv || ''})`; }
     ),
-    defineNode(NodeType.VIEWPORT_DEPTH, 'Viewport Depth', 'Depth', ArrowDown, { inputs: [], outputs: ['out'] },
-        () => tsl.viewportDepth,
-        (_, __, ___, add) => { add?.('viewportDepth'); return `viewportDepth`; }
-    ),
     defineNode(NodeType.VIEWPORT_LINEAR_DEPTH, 'Viewport Linear Depth', 'Depth', ArrowDown, { inputs: [], outputs: ['out'] },
         () => tsl.viewportLinearDepth,
         (_, __, ___, add) => { add?.('viewportLinearDepth'); return `viewportLinearDepth`; }
     ),
-    defineNode(NodeType.LINEAR_DEPTH, 'Linear Depth', 'Depth', ArrowDown, { inputs: ['depth', 'near', 'far'], outputs: ['out'] },
-        (i) => tsl.linearDepth(i.depth || tsl.viewportDepthTexture(), i.near || tsl.cameraNear, i.far || tsl.cameraFar),
-        (i, _, __, add) => { add?.('linearDepth'); add?.('viewportDepthTexture'); return `linearDepth(${i.depth || 'viewportDepthTexture()'}, ${i.near || 'cameraNear'}, ${i.far || 'cameraFar'})`; }
+    defineNode(NodeType.LINEAR_DEPTH, 'Linear Depth', 'Depth', ArrowDown, { inputs: ['depth'], outputs: ['out'] },
+        (i) => tsl.linearDepth(i.depth || tsl.viewportDepthTexture()),
+        (i, _, __, add) => { add?.('linearDepth'); add?.('viewportDepthTexture'); return `linearDepth(${i.depth || 'viewportDepthTexture()'})`; }
     ),
     defineNode(NodeType.CAMERA_NEAR, 'Camera Near', 'Depth', Minimize2, { inputs: [], outputs: ['out'] },
         () => tsl.cameraNear,
