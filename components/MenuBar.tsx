@@ -2,6 +2,7 @@
 import React, { useRef } from 'react';
 import { Save, FolderOpen, FileCode, BookOpen } from 'lucide-react';
 import { EXAMPLES } from '../services/examples';
+import { useUI } from '../contexts/UIContext';
 
 interface MenuBarProps {
   onSave: () => void;
@@ -12,6 +13,7 @@ interface MenuBarProps {
 
 export const MenuBar: React.FC<MenuBarProps> = ({ onSave, onLoad, onExport, onLoadExample }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { simpleMode, setSimpleMode } = useUI();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -77,7 +79,16 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onSave, onLoad, onExport, onLo
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-[9px] text-zinc-600">
+      <div className="flex items-center gap-4 text-[9px] text-zinc-600">
+         <div className="flex items-center gap-2 border-r border-zinc-800 pr-4">
+             <span className={`transition-colors ${simpleMode ? 'text-blue-400 font-bold' : 'text-zinc-500'}`}>Simple UI</span>
+             <button 
+                onClick={() => setSimpleMode(!simpleMode)} 
+                className={`w-8 h-4 rounded-full transition-colors relative ${simpleMode ? 'bg-blue-500/20 border border-blue-500/50' : 'bg-zinc-900 border border-zinc-800'}`}
+             >
+                 <div className={`absolute top-0.5 bottom-0.5 w-2.5 rounded-full bg-current transition-all ${simpleMode ? 'left-[18px] text-blue-500' : 'left-0.5 text-zinc-500'}`} />
+             </button>
+         </div>
          <span className="opacity-50">r182</span>
       </div>
     </div>

@@ -25,6 +25,7 @@ import { CodeViewer } from './components/CodeViewer';
 import { nodeTypes, getNodeDefinition } from './services/NodeRegistry';
 import { CodeGenerator } from './services/CodeGenerator';
 import { EXAMPLES } from './services/examples';
+import { UIProvider } from './contexts/UIContext';
 
 const Flow: React.FC = () => {
   const [nodes, setNodes] = useState<CustomNode[]>([]);
@@ -263,9 +264,11 @@ const Flow: React.FC = () => {
 
 const App: React.FC = () => (
   <ReactFlowProvider>
-    <div className="w-screen h-screen flex bg-zinc-950 text-zinc-200 overflow-hidden text-[11px] font-sans">
-      <Flow />
-    </div>
+    <UIProvider>
+        <div className="w-screen h-screen flex bg-zinc-950 text-zinc-200 overflow-hidden text-[11px] font-sans">
+        <Flow />
+        </div>
+    </UIProvider>
   </ReactFlowProvider>
 );
 
