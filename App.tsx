@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { 
   ReactFlow, 
   Background, 
@@ -141,13 +141,15 @@ const Flow: React.FC = () => {
   }, []); // Run once on mount
 
   // Save to Storage on Change (Debounced)
+  // Increased debounce time to 5000ms to reduce main thread blocking during frequent updates
   useEffect(() => {
       if (!isReady) return;
 
       const timer = setTimeout(() => {
           const data = { nodes, edges };
+          // This operation can be expensive for large graphs
           localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      }, 1000);
+      }, 5000);
 
       return () => clearTimeout(timer);
   }, [nodes, edges, isReady]);
