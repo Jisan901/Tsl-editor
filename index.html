@@ -51,7 +51,7 @@
         .token.regex, .token.important, .token.variable { color: #fb7185; }
     </style>
 
-    <script type="importmap">
+    <script type="importmap2">
 {
   "imports": {
     "react": "https://esm.sh/react@19.0.0",
@@ -78,6 +78,7 @@
 <body>
     <div id="fatal-error-display"></div>
     <div id="root"></div>
+    <script type="module" src="index.tsx"></script>
     <script>
         window.addEventListener('error', (e) => {
             const display = document.getElementById('fatal-error-display');
