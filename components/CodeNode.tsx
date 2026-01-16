@@ -4,21 +4,37 @@ import { Handle, Position, useNodeConnections, useReactFlow } from '@xyflow/reac
 import { useUI } from '../contexts/UIContext';
 import { Code, Play, AlertCircle } from 'lucide-react';
 import * as tsl from 'three/tsl';
-import { useCodeJar } from 'react-code-jar';
+import { CodeJar } from 'codejar';
 import Prism from 'prismjs';
 
 interface CodeNodeProps { id: string; data: any; selected?: boolean; }
 
-const DEFAULT_CODE = `// fn(tsl, inputs)
-const uv = tsl.uv();
+const DEFAULT_CODE = `/* 
+  Dynamic TSL Code Node
+  - 'tsl': The entire three/tsl library.
+  - 'inputs': Object containing connected inputs.
+*/
+
+// 1. Access Inputs (use defaults if not connected)
+// Note: You must list these keys in the return object below
+const uv = inputs.uv || tsl.uv();
+const scale = inputs.scale || tsl.float(10.0);
+
+// 2. Implement Logic
+const pattern = tsl.sin(uv.x.mul(scale))
+               .mul(tsl.cos(uv.y.mul(scale)));
+
+// 3. Define Interface (Inputs & Outputs)
 return {
-  inputs: [],
-  outputs: [{ uv }]
+  inputs: ['uv', 'scale'],
+  outputs: [
+    { result: pattern }
+  ]
 };`;
 
 // Input Row for dynamic inputs derived from code
 const DynamicInputRow = memo(({ input, data, simpleMode }: { input: string, data: any, simpleMode: boolean }) => {
-    const connections = useNodeConnections({ type: 'target', handleId: input });
+    const connections = useNodeConnections({ handleType: 'target', handleId: input });
     const isConnected = connections.length > 0;
     
     return (
@@ -39,20 +55,50 @@ export const CodeNode: React.FC<CodeNodeProps> = memo(({ id, data, selected }) =
   const { updateNodeData } = useReactFlow();
   const [code, setCode] = useState(data.code || DEFAULT_CODE);
   const [error, setError] = useState<string | null>(null);
+  
   const editorRef = useRef<HTMLDivElement>(null);
+  const jarRef = useRef<any>(null);
 
-  const highlight = useCallback((editor: HTMLElement) => {
-    if (editor.textContent) {
-      editor.innerHTML = Prism.highlight(editor.textContent, Prism.languages.javascript, 'javascript');
+  // Initialize CodeJar
+  useEffect(() => {
+    if (editorRef.current && !jarRef.current) {
+        const highlight = (editor: HTMLElement) => {
+            const text = editor.textContent || "";
+            if (Prism.languages.javascript) {
+                 editor.innerHTML = Prism.highlight(text, Prism.languages.javascript, 'javascript');
+            } else {
+                 editor.textContent = text;
+            }
+        };
+
+        const jar = CodeJar(editorRef.current, highlight, { tab: '  ' });
+        
+        // Set initial code
+        jar.updateCode(data.code || DEFAULT_CODE);
+        
+        // Handle updates
+        jar.onUpdate((newCode: string) => {
+            setCode(newCode);
+        });
+
+        jarRef.current = jar;
+
+        return () => {
+            jar.destroy();
+            jarRef.current = null;
+        };
     }
   }, []);
 
-  const editorState = useCodeJar({
-    code: code,
-    onUpdate: (newCode) => setCode(newCode),
-    highlight,
-    lineNumbers: false
-  });
+  // Sync external code changes if necessary
+  useEffect(() => {
+      if (jarRef.current && data.code && data.code !== code) {
+          if (document.activeElement !== editorRef.current) {
+               jarRef.current.updateCode(data.code);
+               setCode(data.code);
+          }
+      }
+  }, [data.code]);
 
   // Compile code to extract I/O structure
   const handleRun = useCallback(() => {
@@ -104,6 +150,11 @@ export const CodeNode: React.FC<CodeNodeProps> = memo(({ id, data, selected }) =
   useEffect(() => {
      if ((!data.inputs && !data.outputs) && data.code) {
          handleRun();
+     } else if (!data.code) {
+         // Set default code if completely empty
+         updateNodeData(id, { ...data, code: DEFAULT_CODE });
+         if (jarRef.current) jarRef.current.updateCode(DEFAULT_CODE);
+         setCode(DEFAULT_CODE);
      }
   }, []);
 
@@ -137,12 +188,13 @@ export const CodeNode: React.FC<CodeNodeProps> = memo(({ id, data, selected }) =
       {/* Editor Area */}
       <div className="relative group bg-[#0d0d0d]">
         <div 
-            ref={editorState.ref} 
-            className={`w-full text-zinc-300 font-mono custom-scrollbar border-b border-zinc-900 focus:outline-none ${simpleMode ? 'text-[9px] p-1.5 min-h-[80px]' : 'text-[10px] p-2 min-h-[120px]'}`}
+            ref={editorRef}
+            className={`w-full text-zinc-300 font-mono custom-scrollbar border-b border-zinc-900 focus:outline-none focus:bg-zinc-900/10 ${simpleMode ? 'text-[9px] p-1.5 min-h-[80px]' : 'text-[10px] p-2 min-h-[120px]'}`}
             style={{ 
                 tabSize: 2, 
                 caretColor: '#a855f7',
-                lineHeight: '1.4'
+                lineHeight: '1.4',
+                whiteSpace: 'pre'
             }}
         />
         {error && (

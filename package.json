@@ -14,7 +14,7 @@
     "three": "0.182.0",
     "lucide-react": "0.460.0",
     "@xyflow/react": "12.10.0",
-    "react-code-jar": "1.0.0",
+    "codejar": "3.7.0",
     "prismjs": "1.29.0"
   },
   "devDependencies": {

@@ -148,7 +148,33 @@ export const effectNodes = [
                 return tsl.float(0);
             }
         },
-        (_, d) => `// Custom Code Node (Dynamic)\n/*\n${d.code || ''}\n*/`,
+        (inputsMap, data, id) => {
+            // Build input string for generated code
+            const inputProps = Object.entries(inputsMap).map(([k, v]) => `${k}: ${v}`).join(', ');
+            
+            // Wrap the user code in an IIFE to ensure it returns the outputs object correctly
+            return `const ${id} = (() => {
+  // Inputs from graph
+  const inputs = { ${inputProps} };
+  
+  // User Code Wrapper
+  const userFn = (tsl, inputs) => {
+    ${data.code}
+  };
+  
+  // Execute
+  const result = userFn(tsl, inputs);
+  
+  // Normalize Return
+  if (result && result.outputs) {
+      if (Array.isArray(result.outputs)) {
+          return Object.assign({}, ...result.outputs);
+      }
+      return result.outputs;
+  }
+  return {};
+})();`;
+        },
         CodeNode
     ),
 

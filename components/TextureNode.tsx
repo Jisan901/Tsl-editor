@@ -9,7 +9,7 @@ interface TextureNodeProps { id: string; data: any; selected?: boolean; }
 const DEFAULT_TEXTURE = 'https://threejs.org/examples/textures/uv_grid_opengl.jpg';
 
 const TextureInputRow = memo(({ input, data, simpleMode }: { input: string, data: any, simpleMode: boolean }) => {
-    const connections = useNodeConnections({ type: 'target', handleId: input });
+    const connections = useNodeConnections({ handleType: 'target', handleId: input });
     const isConnected = connections.length > 0;
 
     return (

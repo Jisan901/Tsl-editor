@@ -15,10 +15,9 @@ const getHandleColor = (handleId: string) => {
 };
 
 // --- Optimized Input Row Component ---
-// Uses useNodeConnections to only re-render this row when connections change,
-// preventing the entire node from re-rendering on unrelated edge changes.
+// Uses useNodeConnections to only re-render this row when connections change.
 const InputRow = memo(({ input, data, simpleMode }: { input: string, data: any, simpleMode: boolean }) => {
-    const connections = useNodeConnections({ type: 'target', handleId: input });
+    const connections = useNodeConnections({ handleType: 'target', handleId: input });
     const isConnected = connections.length > 0;
     
     return (

@@ -13,6 +13,9 @@ export class CodeGenerator {
     const webgpuImports = new Set<string>();
     const threeImports = new Set<string>();
 
+    // Check if we need the full TSL namespace (for CodeNode)
+    const hasCodeNode = nodes.some(n => n.type === 'codeNode');
+
     const addImport = (name: string) => {
         if (name === 'MeshStandardNodeMaterial' || name === 'MeshBasicNodeMaterial') {
             webgpuImports.add(name);
@@ -84,16 +87,24 @@ export class CodeGenerator {
 
       // Collect inputs map
       const inputs: Record<string, string> = {};
-      def.inputs.forEach(k => {
+      // Handle dynamic inputs (CodeNode) or static definition inputs
+      const inputKeys = node.data.inputs || def.inputs;
+
+      inputKeys.forEach((k: string) => {
           const v = getInput(k);
-          if (v) inputs[k] = v;
-          else {
-              // Don't default specific inputs like viewDir or uv to float(0)
-              // This allows the codeFn to handle the default logic
-              if (['viewDir', 'uv'].includes(k)) {
-                  // undefined
+          if (v) {
+              inputs[k] = v;
+          } else {
+              // Special handling for CodeNode: pass 'undefined' string so the JS code can fallback to defaults
+              if (type === NodeType.CODE) {
+                  inputs[k] = 'undefined';
               } else {
-                  inputs[k] = 'float(0)';
+                  // Standard nodes: default missing inputs to float(0) usually, unless specific ones
+                  if (['viewDir', 'uv'].includes(k)) {
+                       // Do not define, let standardOp handle or implicit defaults
+                  } else {
+                       inputs[k] = 'float(0)';
+                  }
               }
           }
       });
@@ -182,9 +193,10 @@ export class CodeGenerator {
         addImport('MeshStandardNodeMaterial');
     }
 
-    const tslImportsString = tslImports.size > 0 
-        ? `import { \n  ${Array.from(tslImports).join(', ')} \n} from 'three/tsl';`
-        : '';
+    const tslImportsString = [
+        tslImports.size > 0 ? `import { \n  ${Array.from(tslImports).join(', ')} \n} from 'three/tsl';` : '',
+        hasCodeNode ? `import * as tsl from 'three/tsl';` : ''
+    ].filter(Boolean).join('\n');
         
     const webgpuImportsString = webgpuImports.size > 0 
         ? `import { \n  ${Array.from(webgpuImports).join(', ')} \n} from 'three/webgpu';`
