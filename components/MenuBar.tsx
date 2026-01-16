@@ -1,6 +1,6 @@
 
 import React, { useRef } from 'react';
-import { Save, FolderOpen, FileCode, BookOpen } from 'lucide-react';
+import { Save, FolderOpen, FileCode, BookOpen, Maximize } from 'lucide-react';
 import { EXAMPLES } from '../services/examples';
 import { useUI } from '../contexts/UIContext';
 
@@ -19,6 +19,18 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onSave, onLoad, onExport, onLo
     if (e.target.files?.[0]) {
       onLoad(e.target.files[0]);
       e.target.value = ''; // Reset
+    }
+  };
+
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
     }
   };
 
@@ -89,6 +101,15 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onSave, onLoad, onExport, onLo
                  <div className={`absolute top-0.5 bottom-0.5 w-2.5 rounded-full bg-current transition-all ${simpleMode ? 'left-[18px] text-blue-500' : 'left-0.5 text-zinc-500'}`} />
              </button>
          </div>
+         
+         <button 
+            onClick={toggleFullScreen}
+            className="flex items-center gap-1 text-zinc-500 hover:text-white transition-colors"
+            title="Toggle Full Screen"
+         >
+             <Maximize size={10} />
+         </button>
+
          <span className="opacity-50">r182</span>
       </div>
     </div>

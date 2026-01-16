@@ -27,6 +27,8 @@ import { CodeGenerator } from './services/CodeGenerator';
 import { EXAMPLES } from './services/examples';
 import { UIProvider } from './contexts/UIContext';
 
+const STORAGE_KEY = 'tsl-lab-graph';
+
 const Flow: React.FC = () => {
   const [nodes, setNodes] = useState<CustomNode[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
@@ -36,6 +38,7 @@ const Flow: React.FC = () => {
   const [exportCode, setExportCode] = useState<string | null>(null);
   const [exportTitle, setExportTitle] = useState('');
   const [debugShader, setDebugShader] = useState<{ vertexShader: string, fragmentShader: string } | null>(null);
+  const [isReady, setIsReady] = useState(false);
   
   const { deleteElements, fitView, setViewport } = useReactFlow();
 
@@ -99,11 +102,56 @@ const Flow: React.FC = () => {
      }
   }, [loadExample]);
 
+  // --- Persistence Logic ---
 
+  // Load from Storage on Mount
   useEffect(() => {
-    // Initial Load
-    loadExample('hologram');
-  }, [loadExample]);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      let loaded = false;
+      if (saved) {
+          try {
+              const json = JSON.parse(saved);
+              if (Array.isArray(json.nodes) && Array.isArray(json.edges)) {
+                   // Rehydrate nodes with handlers and icons
+                   const hydratedNodes = json.nodes.map((n: any) => {
+                      const def = getNodeDefinition(n.type);
+                      return {
+                          ...n,
+                          data: {
+                              ...n.data,
+                              icon: def?.icon,
+                              onChange: (k: string, v: any) => updateNodeData(n.id, k, v)
+                          }
+                      };
+                  });
+                  setNodes(hydratedNodes);
+                  setEdges(json.edges);
+                  setTimeout(() => fitView({ padding: 0.2 }), 100);
+                  loaded = true;
+              }
+          } catch (e) {
+              console.warn("Failed to load local storage", e);
+          }
+      }
+
+      if (!loaded) {
+          loadExample('hologram');
+      }
+      setIsReady(true);
+  }, []); // Run once on mount
+
+  // Save to Storage on Change (Debounced)
+  useEffect(() => {
+      if (!isReady) return;
+
+      const timer = setTimeout(() => {
+          const data = { nodes, edges };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      }, 1000);
+
+      return () => clearTimeout(timer);
+  }, [nodes, edges, isReady]);
+
 
   // --- Save / Load / Export Logic ---
   
