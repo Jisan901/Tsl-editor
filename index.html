@@ -1,0 +1,76 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Primary Meta Tags -->
+    <title>TSL Lab | Node Material Editor</title>
+    <meta name="title" content="TSL Lab | Node Material Editor">
+    <meta name="description" content="A high-performance node-based material editor for Three.js and WebGPU. Create complex TSL shaders visually using a flow-based interface and preview them in real-time.">
+    <meta name="keywords" content="Three.js, TSL, WebGPU, Shader Editor, Node Material, React Flow, xyflow, WebGL, 3D Graphics, Creative Coding, GLSL, WGSL">
+    <meta name="author" content="TSL Lab">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="TSL Lab | Node Material Editor">
+    <meta property="og:description" content="A high-performance node-based material editor for Three.js and WebGPU. Create complex TSL shaders visually using a flow-based interface and preview them in real-time.">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="TSL Lab | Node Material Editor">
+    <meta property="twitter:description" content="A high-performance node-based material editor for Three.js and WebGPU. Create complex TSL shaders visually using a flow-based interface and preview them in real-time.">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://esm.sh/@xyflow/react@12.10.0/dist/style.css">
+    <script src="//cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
+    
+    <style>
+        body { margin: 0; overflow: hidden; background: #09090b; color: #fafafa; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 11px; }
+        #fatal-error-display { display: none; position: fixed; top: 10px; left: 10px; right: 10px; background: #ef4444; color: #fff; padding: 12px; border-radius: 6px; z-index: 99999; font-family: 'Menlo', 'Monaco', monospace; font-size: 11px; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        
+        .react-flow__node { border-radius: 4px; border: 1px solid #27272a; background: #18181b; }
+        .react-flow__handle { width: 6px; height: 6px; background: #3b82f6; border: 2px solid #09090b; }
+        .react-flow__controls { background: #18181b !important; border: 1px solid #27272a !important; border-radius: 4px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important; }
+        .react-flow__controls-button { border-bottom: 1px solid #27272a !important; fill: #71717a !important; }
+        .react-flow__attribution { display: none; }
+        
+        /* PrismJS Theme Adjustment */
+        code[class*="language-"], pre[class*="language-"] { font-family: 'Menlo', 'Monaco', monospace !important; font-size: 10px !important; text-shadow: none !important; }
+        .token.comment, .token.prolog, .token.doctype, .token.cdata { color: #52525b; }
+        .token.punctuation { color: #a1a1aa; }
+        .token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol, .token.deleted { color: #f472b6; }
+        .token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted { color: #a78bfa; }
+        .token.operator, .token.entity, .token.url, .language-css .token.string, .style .token.string { color: #e879f9; }
+        .token.atrule, .token.attr-value, .token.keyword { color: #60a5fa; }
+        .token.function, .token.class-name { color: #fbbf24; }
+        .token.regex, .token.important, .token.variable { color: #fb7185; }
+    </style>
+
+  <script type="module" crossorigin src="/assets/index-5bD9Ca65.js"></script>
+</head>
+<body>
+    <div id="fatal-error-display"></div>
+    <div id="root"></div>
+    <script>
+        window.addEventListener('error', (e) => {
+            const display = document.getElementById('fatal-error-display');
+            if (display) {
+                display.style.display = 'block';
+                display.textContent = 'Runtime Error: ' + (e.error?.message || e.message);
+            }
+        });
+        window.addEventListener('unhandledrejection', (e) => {
+             const display = document.getElementById('fatal-error-display');
+            if (display) {
+                display.style.display = 'block';
+                display.textContent = 'Unhandled Promise: ' + (e.reason?.message || e.reason);
+            }
+        });
+    </script>
+</body>
+</html>
